@@ -4,7 +4,7 @@ Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NO
 
 ## Estado de etapas
 1. Plan — **aprobado** (`docs/plan-etapa-1.md`).
-2. Interfaz y Möbius — **hecho, pendiente de aprobación del diseño** (`docs/etapa-2.md`). Pantallas 1, 2 y 4 con datos ficticios, Möbius en tiempo real con 4 estados y simulador.
+2. Interfaz y Möbius — **aprobado** (2026-11-01; Diego pidió estados más distintos: ajustados en `TARGETS` de `Mobius.ts`) (`docs/etapa-2.md`). Pantallas 1, 2 y 4 con datos ficticios, Möbius en tiempo real con 4 estados y simulador.
 3–7. Sin empezar.
 
 ## Decisiones tomadas
