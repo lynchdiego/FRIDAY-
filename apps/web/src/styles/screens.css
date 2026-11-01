@@ -120,3 +120,45 @@ textarea.confirm-body { background: rgba(255,255,255,.04); border: 1px solid var
   .sim { top: max(12px, env(safe-area-inset-top)); bottom: auto; left: 16px; right: 16px; }
   .sim:not([open]) { left: auto; right: 16px; padding: 6px 14px; }
 }
+
+/* ---------- Pantalla 3: conversación ---------- */
+.chat { max-width: 760px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; padding: max(16px, env(safe-area-inset-top)) 20px 0; }
+.chat-head { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 2; background: var(--bg); padding-bottom: 6px; }
+.chat-mobius { height: 140px; margin: -12px 0 -12px; position: relative; }
+.chat-state { min-width: 72px; text-align: right; }
+.chat-log { flex: 1; display: flex; flex-direction: column; gap: 22px; padding: 18px 0 24px; }
+.chat-empty { font-size: 34px; letter-spacing: -0.05em; color: var(--text-3); margin-top: 12vh; }
+.msg-user { align-self: flex-end; max-width: 80%; padding: 10px 16px; border-radius: 20px; background: rgba(255,255,255,.06); border: 1px solid var(--line); font-size: 15px; line-height: 1.45; white-space: pre-wrap; }
+.msg-friday { max-width: 100%; font-size: 17px; line-height: 1.55; letter-spacing: -0.012em; white-space: pre-wrap; }
+.msg-friday > p:first-child { color: var(--text); }
+.chat-dock { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 10px; margin: 0 -20px; padding: 14px 20px max(14px, env(safe-area-inset-bottom)); background: linear-gradient(to bottom, rgba(10,10,10,0), var(--bg) 22px); }
+
+.cards { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.rcard { padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; white-space: normal; }
+.rcard-title { font-size: 17px; font-weight: 500; letter-spacing: -0.025em; }
+.rcard-body { font-size: 14px; line-height: 1.55; color: var(--text-3); white-space: pre-wrap; max-height: 200px; overflow: auto; }
+.rcard-btn { align-self: flex-start; margin-top: 8px; text-decoration: none; }
+.rcard .daylist li { padding: 8px 0; }
+.maillist, .plainlist { list-style: none; padding: 0; }
+.maillist li { display: grid; grid-template-columns: 10px 150px 1fr; gap: 10px; align-items: baseline; padding: 8px 0; font-size: 14px; }
+.maillist li + li, .plainlist li + li { border-top: 1px solid var(--line); }
+.plainlist li { padding: 8px 0; font-size: 14px; }
+.mail-from { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-subj { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dot { width: 6px; height: 6px; border-radius: 50%; align-self: center; }
+.dot.on { background: var(--text); }
+.warn { font-size: 13px; color: var(--text); border: 1px solid rgba(255,255,255,.38); border-radius: 12px; padding: 8px 12px; }
+.notice { font-size: 14px; color: var(--text-2); }
+.notice.error { color: var(--text); border-left: 2px solid var(--text-3); padding-left: 10px; }
+@media (max-width: 599px) {
+  .maillist li { grid-template-columns: 10px 1fr; }
+  .maillist .mail-subj { grid-column: 2; margin-top: -6px; color: var(--text-3); }
+  .chat-empty { font-size: 28px; }
+}
+
+/* ---------- Inicio de sesión ---------- */
+.login { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; }
+.login-mobius { width: min(420px, 90vw); height: 300px; position: relative; }
+.login-title { font-size: 28px; letter-spacing: -0.04em; }
+.login-field { width: min(360px, 100%); }
+.btn:disabled, .send:disabled { opacity: .5; cursor: default; }

@@ -1,25 +1,48 @@
 # FRIDAY — contexto para sesiones futuras
 
-Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NODO). Prompt original: `docs/prompt-original.md`. Diego no programa: explicar en español sencillo, probar cada etapa, no avanzar sin su aprobación, cuidar el presupuesto.
+Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NODO). Prompt original: `docs/prompt-original.md`. Diego no programa: explicar en español sencillo, probar cada etapa, no avanzar sin su aprobación, cuidar el presupuesto, cambios enfocados.
 
 ## Estado de etapas
 1. Plan — **aprobado** (`docs/plan-etapa-1.md`).
-2. Interfaz y Möbius — **aprobado** (2026-11-01; Diego pidió estados más distintos: ajustados en `TARGETS` de `Mobius.ts`) (`docs/etapa-2.md`). Pantallas 1, 2 y 4 con datos ficticios, Möbius en tiempo real con 4 estados y simulador.
-3–7. Sin empezar.
+2. Interfaz y Möbius — **aprobado** (2026-11-01). Ajustes posteriores: estados más distintos; Inicio responsivo para iPhone.
+3. Cerebro por texto — **hecho, pendiente de aprobación** (`docs/etapa-3.md`). 15 pruebas pasan con Claude simulado. Falta la prueba corta con Claude real (`npm run test:live`) cuando Diego tenga su llave.
+4. Google (Calendar, Gmail, **Tasks**) — siguiente. Se construye con simuladores; las cuentas reales se conectan al final.
+5. Voz — después de la 4. Igual: simuladores/voz del navegador y ElevenLabs al final.
+6–7. Sin empezar.
 
-## Decisiones tomadas
-- TypeScript, Fastify, Postgres+Drizzle, Vite+React PWA, Three.js. SDK de Anthropic con ciclo de herramientas propio (no Agent SDK).
-- Modelos por variable de entorno: Sonnet 5.5 por defecto, Opus 5.5 para tareas pesadas.
-- Permisos: lista única en `packages/shared/skills.ts`; ACTÚA exige token de un solo uso validado por el servidor.
-
-- Google: app "En producción sin verificar" (decidido por Diego 2026-11-01); evita la caducidad de 7 días de Testing. Verificación formal después, para NODO.
+## Acuerdos con Diego (2026-11-01)
+- Google: app "En producción sin verificar" (evita caducidad de 7 días de Testing). Verificación formal después, para NODO.
 - Límite de gasto diario en Claude: US$2 (piloto).
-- Web: `apps/web` (Vite 8 + React 19 + three 0.187). Möbius en `apps/web/src/mobius/` (`Mobius.ts` motor, `shaders.ts`, `presence.ts` estado global calma/escucha/piensa/habla + nivel de audio). En etapa 5 `presence.set` recibirá el nivel real del analizador de audio.
-- Postproceso: UnrealBloom + pase final propio (aberración, viñeta, grano, fusión con #0A0A0A). Calidad automática en 3 niveles; `prefers-reduced-motion` reduce movimiento.
-- Ojo: el minificador de CSS de Vite fusiona `-webkit-backdrop-filter` y `backdrop-filter`; escribir solo `backdrop-filter` en el código.
-- Inicio responsivo: Mac = panel fijo 420×660; iPhone (<600px) = pantalla que fluye con prioridad, 3 siguientes y "Tu día", controles fijos abajo (sticky, safe-area). Si WebGL falla se muestra un anillo estático (`.mobius-fallback`). Diego pidió: interfaz productiva, simple y efectiva, que se vea bien en iPhone y Mac.
-- Vista previa privada: artefacto de claude.ai (slug fb6c693a-1a3b-4874-895d-65ab208a7545), publicado desde `apps/web/dist`.
+- Plan de llaves: construir 3, 4 y 5 con simuladores; solo una prueba corta con Claude real al final de la 3; Google y ElevenLabs al final.
+- Alcance v1 ampliado (aprobado): **Google Tasks** (pendientes sincronizados) y **mensajes de WhatsApp preparados** (enlace wa.me: FRIDAY redacta, Diego envía con un toque). No hay API oficial para WhatsApp personal: no automatizar.
+- v2 (después del piloto): reservaciones por llamada con voz (ElevenLabs + número telefónico, identificándose como IA) e iMessage desde la app nativa de Mac.
+- La interfaz se puede seguir ajustando; Diego quiere una interfaz productiva, simple y efectiva en iPhone y Mac. Agrupar ajustes de diseño por etapa.
+
+## Arquitectura (como está construida)
+- Monorepo npm workspaces: `apps/web` (Vite 8 + React 19 + three), `apps/server` (Fastify 5 + TS con tsx), `packages/shared` (habilidades/permisos y tipos de tarjetas).
+- **Permisos**: `packages/shared/src/skills.ts` es la fuente única. El servidor solo ofrece al modelo herramientas `activa` y nunca `NUNCA`. `ACTUA` → `tools/execute.ts` crea `pending_actions` con token de un solo uso (solo hash en BD; el token va a la pantalla, nunca al modelo). Ejecutar: `POST /api/actions/:id/confirm` (token) o "sí" escrito/dicho por Diego si `verbal_ok` (falso si en ese turno se leyó contenido externo). Ejecución atómica (UPDATE … WHERE status='pendiente' AND expires_at>now()).
+- **Contenido externo** (correo/calendario) se envuelve en `<datos_no_confiables>` con `<`/`>` escapados + detector de instrucciones sospechosas (`SUSPICIOUS`) que avisa y audita.
+- **Modelo**: `llm/anthropic.ts` usa `client.beta.messages.create` con `fallbacks: 'default'` (beta `server-side-fallback-2026-07-01`), `output_config.effort` (`low` chat, `high` pesado), caché: bloque fijo de `prompts/friday.md` con `cache_control` + auto-caché. Fecha/hora va en el mensaje del usuario (`<contexto>`) para no romper la caché. Historial: solo se agrega, nunca se edita (requisito de "preserved thinking"); una conversación por sesión.
+- Modelo pesado (Opus 5.5) si el texto coincide con `HEAVY` en `agent/run.ts` o `heavy: true`.
+- `llm/mock.ts`: Claude simulado (gratis). `naive: true` se deja engañar por el correo malicioso (para probar que el servidor frena).
+- **BD**: PostgreSQL; en desarrollo/pruebas PGlite (sin Docker). Migraciones SQL en `apps/server/src/db/migrations`. Se usa SQL directo (no Drizzle): más simple de leer; cambio respecto al plan.
+- **Costos**: `usage_log` por llamada; `llm/pricing.ts` (Sonnet 5.5 $2/$10, Opus 5.5 $4/$20, caché $0.20). Límite diario → modo básico sin llamar al modelo.
+- **Sesión**: contraseña única (`FRIDAY_PASSWORD`), cookie httpOnly, 5 intentos/15 min.
+- Integraciones: `integrations/types.ts` (contratos) + `mock.ts` (datos ficticios con correo malicioso). Etapa 4 agrega `google.ts` con la misma forma.
+- Web: `state/chat.ts` (modo `server` o `demo` si no hay servidor), `screens/Chat.tsx` (pantalla 3), `components/Cards.tsx`, `ConfirmSheet.tsx` (pantalla 4 real). Horas siempre en la zona de Diego (`/api/me`).
+- Möbius: `apps/web/src/mobius/` (`Mobius.ts` motor y `TARGETS` por estado, `shaders.ts`, `presence.ts`). Etapa 5: `presence.set` recibe el nivel real de audio.
+
+## Cómo correr
+- Pruebas: `npm test` (simulado, gratis) · `npm run test:live` (Claude real, requiere `ANTHROPIC_API_KEY`, centavos).
+- Desarrollo: copiar `.env.example` a `.env`, poner `FRIDAY_PASSWORD`; `npm run dev:server` y `npm run dev:web` → http://localhost:5173.
+
+## Notas técnicas
+- El minificador de CSS de Vite fusiona `-webkit-backdrop-filter` y `backdrop-filter`: escribir solo `backdrop-filter`.
+- En JS `\b` no reconoce letras acentuadas: usar `(?=[^\p{L}]|$)` con bandera `u` (ver `AFFIRM` en `agent/run.ts`).
+- Vista previa privada: artefacto claude.ai (slug fb6c693a-1a3b-4874-895d-65ab208a7545), publicado desde `apps/web/dist` (modo demo).
 
 ## Pendientes
-- Verificar precios en páginas oficiales antes de la etapa 5.
-- Diseño: ver sección 5 del prompt original (colores, vidrio, Inter Tight, Möbius). Referencia visual en `referencia/`.
+- Prueba con Claude real (Diego crea cuenta en platform.claude.com, US$10 de saldo, límite mensual ~US$20).
+- Etapa 4: Google real + Tasks; pantalla de Habilidades y permisos (leer `/api/skills`).
+- Verificar precios de ElevenLabs y STT en páginas oficiales antes de la etapa 5.
+- Resumir historial por día (`summaries`) cuando las conversaciones crezcan.

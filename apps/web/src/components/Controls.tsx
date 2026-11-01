@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Mic, Pen, Mute, ArrowUp } from './icons';
 import { presence, simulateReply, startListening, usePresence } from '../mobius/presence';
+import { chat, useChat } from '../state/chat';
 
 /** Botón Hablar: mantener presionado para hablar (ratón, dedo o teclado). */
 export function TalkButton({ className = '' }: { className?: string }) {
@@ -31,13 +32,20 @@ export function MuteButton() {
   );
 }
 
-export function AskField({ id, className = '', material = 'clear' }: { id?: string; className?: string; material?: 'clear' | 'frosted' }) {
+export function AskField({ id, className = '', material = 'clear', autoFocus }: { id?: string; className?: string; material?: 'clear' | 'frosted'; autoFocus?: boolean }) {
   const [v, setV] = useState('');
-  const submit = (e: React.FormEvent) => { e.preventDefault(); if (!v.trim()) return; setV(''); simulateReply(); };
+  const { busy } = useChat();
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!v.trim() || busy) return;
+    const text = v; setV('');
+    if (location.hash !== '#conversacion') location.hash = 'conversacion';
+    chat.send(text);
+  };
   return (
     <form className={`field ${material} ${className}`} onSubmit={submit}>
-      <input id={id} value={v} onChange={(e) => setV(e.target.value)} placeholder="Pregúntame lo que sea" aria-label="Pregúntame lo que sea" />
-      <button className="send" aria-label="Enviar"><ArrowUp /></button>
+      <input id={id} value={v} onChange={(e) => setV(e.target.value)} placeholder="Pregúntame lo que sea" aria-label="Pregúntame lo que sea" autoFocus={autoFocus} enterKeyHint="send" />
+      <button className="send" aria-label="Enviar mensaje" disabled={busy}><ArrowUp /></button>
     </form>
   );
 }

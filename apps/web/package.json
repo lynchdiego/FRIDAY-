@@ -10,7 +10,8 @@
   "dependencies": {
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "three": "^0.187.0"
+    "three": "^0.187.0",
+    "@friday/shared": "*"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
