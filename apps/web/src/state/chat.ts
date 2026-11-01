@@ -42,7 +42,7 @@ async function api<T>(path: string, body?: unknown): Promise<T> {
 export const chat = {
   async init() {
     try {
-      const h = await fetch('/api/health').then((r) => (r.ok ? r.json() : null));
+      const h = await fetch('/api/health', { signal: AbortSignal.timeout(3000) }).then((r) => (r.ok ? r.json() : null));
       if (!h?.ok) throw new Error();
       set({ mode: 'server' });
       try { const me = await api<{ tz: string }>('/me'); set({ authed: true, tz: me.tz }); } catch { /* muestra login */ }
