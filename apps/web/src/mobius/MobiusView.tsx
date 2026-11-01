@@ -5,7 +5,9 @@ import { presence, syntheticVoice } from './presence';
 export function MobiusView({ className, distance }: { className?: string; distance?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const m = new Mobius(ref.current!, { distance });
+    let m: Mobius;
+    try { m = new Mobius(ref.current!, { distance }); }
+    catch { ref.current!.classList.add('mobius-fallback'); return; }
     let raf = 0;
     const t0 = performance.now();
     const tick = () => {

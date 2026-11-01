@@ -17,6 +17,7 @@ Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NO
 - Web: `apps/web` (Vite 8 + React 19 + three 0.187). Möbius en `apps/web/src/mobius/` (`Mobius.ts` motor, `shaders.ts`, `presence.ts` estado global calma/escucha/piensa/habla + nivel de audio). En etapa 5 `presence.set` recibirá el nivel real del analizador de audio.
 - Postproceso: UnrealBloom + pase final propio (aberración, viñeta, grano, fusión con #0A0A0A). Calidad automática en 3 niveles; `prefers-reduced-motion` reduce movimiento.
 - Ojo: el minificador de CSS de Vite fusiona `-webkit-backdrop-filter` y `backdrop-filter`; escribir solo `backdrop-filter` en el código.
+- Inicio responsivo: Mac = panel fijo 420×660; iPhone (<600px) = pantalla que fluye con prioridad, 3 siguientes y "Tu día", controles fijos abajo (sticky, safe-area). Si WebGL falla se muestra un anillo estático (`.mobius-fallback`). Diego pidió: interfaz productiva, simple y efectiva, que se vea bien en iPhone y Mac.
 - Vista previa privada: artefacto de claude.ai (slug fb6c693a-1a3b-4874-895d-65ab208a7545), publicado desde `apps/web/dist`.
 
 ## Pendientes

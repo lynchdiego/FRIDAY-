@@ -6,7 +6,7 @@ export function Simulator({ view, setView, onConfirm }: { view: string; setView:
   const p = usePresence();
   const states: PresenceState[] = ['calm', 'listen', 'think', 'speak'];
   return (
-    <details className="sim blur card" open>
+    <details className="sim blur card" open={!window.matchMedia('(max-width: 599px)').matches}>
       <summary>Simulador</summary>
       <div className="sim-row">
         <span className="label">Pantalla</span>

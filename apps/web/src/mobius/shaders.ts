@@ -80,8 +80,10 @@ export const finishShader = {
       col.g = texture2D(tDiffuse, vUv).g;
       col.b = texture2D(tDiffuse, vUv - off).b;
       vec2 cv = c*vec2(max(aspect, 1.0), max(1.0/aspect, 1.0));
-      col *= smoothstep(0.85, 0.2, length(cv));
-      col += (hash(vUv*1000.0 + fract(time)*137.0) - 0.5)*grain;
+      float vig = smoothstep(0.85, 0.2, length(cv));
+      col *= vig;
+      // El grano se desvanece con la viñeta para que no se note el borde del lienzo.
+      col += (hash(vUv*1000.0 + fract(time)*137.0) - 0.5)*grain*vig;
       vec3 bg = vec3(10.0/255.0);
       col = bg + max(col, 0.0)*(1.0 - bg);
       gl_FragColor = vec4(col, 1.0);
