@@ -6,7 +6,11 @@ import type { Deps } from './agent/run';
 import { runTurn, conversationView } from './agent/run';
 import { confirmAction, cancelAction } from './agent/actions';
 import { spend } from './agent/usage';
+import { audit } from './agent/audit';
 import { login, logout, requireAuth, SESSION_COOKIE } from './security/auth';
+import { randomToken } from './security/crypto';
+import { today } from './agent/today';
+import { authUrl, saveConnection, connectionStatus, disconnect, googleConfigured } from './integrations/google';
 
 export async function buildApp(deps: Deps) {
   const { db, config } = deps;
@@ -51,6 +55,41 @@ export async function buildApp(deps: Deps) {
     return r.ok ? { ok: true, text: `Listo. ${r.done}` } : reply.code(r.reason === 'fallo' ? 502 : 409).send({ ok: false, error: r.message });
   });
   app.post('/api/actions/:id/cancel', { preHandler: auth }, async (req) => ({ ok: await cancelAction(db, req.userId!, (req.params as any).id) }));
+
+  // Resumen del día (agenda, correos, pendientes, recordatorios y una prioridad)
+  app.get('/api/today', { preHandler: auth }, async (req) => today(deps, req.userId!, (req.query as any)?.refrescar === '1'));
+
+  // Google: conexión OAuth (permisos mínimos; tokens cifrados)
+  app.get('/api/google/status', { preHandler: auth }, async (req) => ({
+    configured: googleConfigured(config), mode: deps.integ.name, ...(await connectionStatus(db, req.userId!)),
+  }));
+  app.get('/api/google/connect', { preHandler: auth }, async (req, reply) => {
+    if (!googleConfigured(config)) return reply.code(400).send({ error: 'Google todavía no está configurado en el servidor.' });
+    const state = randomToken(32);
+    await db.query(`INSERT INTO oauth_states(state, user_id, expires_at) VALUES ($1,$2, now() + interval '10 minutes')`, [state, req.userId]);
+    return reply.redirect(authUrl(config, state));
+  });
+  // Regreso desde Google: se valida con el "state" de un solo uso (la cookie estricta no viaja en este salto).
+  app.get('/api/google/callback', async (req, reply) => {
+    const q = req.query as { code?: string; state?: string; error?: string };
+    const back = (r: string) => reply.redirect(`${config.PUBLIC_URL}/?google=${r}#habilidades`);
+    if (q.error || !q.code || !q.state) return back('cancelado');
+    const r = await db.query<any>('DELETE FROM oauth_states WHERE state=$1 AND expires_at > now() RETURNING user_id', [q.state]);
+    if (!r.rows[0]) return back('vencido');
+    try {
+      await saveConnection(db, config, r.rows[0].user_id, q.code);
+      await audit(db, r.rows[0].user_id, 'ejecutada', 'google_connect', null);
+      return back('ok');
+    } catch (e) {
+      app.log.warn({ err: (e as Error).message }, 'google callback');
+      return back('error');
+    }
+  });
+  app.post('/api/google/disconnect', { preHandler: auth }, async (req) => {
+    await disconnect(db, config, req.userId!);
+    await audit(db, req.userId!, 'ejecutada', 'google_disconnect', null);
+    return { ok: true };
+  });
 
   // Habilidades y permisos (fuente única de verdad)
   app.get('/api/skills', { preHandler: auth }, async () => ({ skills: SKILLS.map(({ description, ...s }) => ({ ...s, description })), never: NEVER_RULES, groups: GROUP_LABEL, permissions: PERMISSION_LABEL }));

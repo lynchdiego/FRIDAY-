@@ -96,6 +96,7 @@ export const chat = {
   },
 
   clearToast() { set({ toast: undefined }); },
+  notify(text: string) { set({ toast: text }); },
 };
 
 /** La presencia "habla" mientras dura la respuesta (en la etapa 5 seguirá al audio real). */

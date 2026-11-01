@@ -5,3 +5,4 @@ export const Pen = () => <svg className="icon" viewBox="0 0 24 24" {...S}><path 
 export const Speaker = () => <svg className="icon" viewBox="0 0 24 24" {...S}><path d="M4 9v6h4l5 4V5L8 9H4zM16.5 8.5a5 5 0 0 1 0 7"/></svg>;
 export const Mute = () => <svg className="icon" viewBox="0 0 24 24" {...S}><path d="M4 9v6h4l5 4V5L8 9H4zM17 9l4 6M21 9l-4 6"/></svg>;
 export const ArrowUp = () => <svg className="icon" viewBox="0 0 24 24" {...S}><path d="M12 19V5M6 11l6-6 6 6"/></svg>;
+export const Sliders = () => <svg className="icon" viewBox="0 0 24 24" {...S}><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>;

@@ -1,4 +1,4 @@
-import type { Integrations, CalendarEvent, Email, NewEvent, OutgoingEmail } from './types';
+import type { Integrations, CalendarEvent, Email, NewEvent, OutgoingEmail, TaskItem } from './types';
 import { IntegrationError } from './types';
 
 /**
@@ -32,7 +32,13 @@ export function createMockIntegrations(opts: { tz: string; now?: () => Date } ) 
     { id: 'm4', from: 'Newsletter Cine <news@cine.example>', to: 'diego@ejemplo.com', subject: 'Lo nuevo en lentes anamórficos', date: day(-1, '09:00'), unread: false,
       snippet: 'Cinco lentes para este año.', body: 'Cinco lentes anamórficos para este año...' },
   ];
-  const guard = (svc: 'Google Calendar' | 'Gmail') => { if (state.failing) throw new IntegrationError(svc, `${svc} no responde (simulado)`); };
+  const tasks: TaskItem[] = [
+    { id: 't1', title: 'Enviar la cotización del rodaje en Tulum', due: day(0, '14:00') },
+    { id: 't2', title: 'Respaldar el material de ayer' },
+    { id: 't3', title: 'Revisar propuesta del paquete premium de NODO' },
+  ];
+  let taskSeq = tasks.length;
+  const guard = (svc: 'Google Calendar' | 'Gmail' | 'Google Tasks') => { if (state.failing) throw new IntegrationError(svc, `${svc} no responde (simulado)`); };
 
   const integrations: Integrations = {
     name: 'mock',
@@ -62,6 +68,16 @@ export function createMockIntegrations(opts: { tz: string; now?: () => Date } ) 
       async read(id) { guard('Gmail'); const m = emails.find((e) => e.id === id); if (!m) throw new IntegrationError('Gmail', `No existe el correo ${id}`); return m; },
       async draft(m) { guard('Gmail'); state.drafts.push(m); return { draftId: `d${state.drafts.length}` }; },
       async send(m) { guard('Gmail'); state.sent.push(m); return { messageId: `s${state.sent.length}` }; },
+    },
+    tasks: {
+      async list() { guard('Google Tasks'); return tasks.filter((t) => !(t as any).done).map(({ id, title, due }) => ({ id, title, due })); },
+      async add(title, due, notes) { guard('Google Tasks'); const t = { id: `t${++taskSeq}`, title, due, notes }; tasks.push(t); return t; },
+      async complete(id) {
+        guard('Google Tasks');
+        const t = tasks.find((x) => x.id === id);
+        if (!t) throw new IntegrationError('Google Tasks', `No existe el pendiente ${id}`);
+        (t as any).done = true;
+      },
     },
   };
   return { integrations, state };

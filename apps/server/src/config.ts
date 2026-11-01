@@ -18,6 +18,9 @@ const Env = z.object({
   FRIDAY_TZ: z.string().default('America/Cancun'),
   OWNER_NAME: z.string().default('Diego'),
   INTEGRATIONS: z.enum(['mock', 'google']).default('mock'),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  PUBLIC_URL: z.string().default('http://localhost:5173'), // dirección desde la que Diego abre la app
 });
 
 export type Config = z.infer<typeof Env> & { llmProvider: 'anthropic' | 'mock' };
@@ -32,5 +35,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   if (c.NODE_ENV === 'production' && !c.ENCRYPTION_KEY) throw new Error('ENCRYPTION_KEY es obligatoria en producción');
   const llmProvider = c.LLM_PROVIDER ?? (c.ANTHROPIC_API_KEY ? 'anthropic' : 'mock');
   if (llmProvider === 'anthropic' && !c.ANTHROPIC_API_KEY) throw new Error('Falta ANTHROPIC_API_KEY');
+  if (c.INTEGRATIONS === 'google' && !(c.GOOGLE_CLIENT_ID && c.GOOGLE_CLIENT_SECRET && c.ENCRYPTION_KEY))
+    throw new Error('Para usar Google faltan GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET o ENCRYPTION_KEY');
   return { ...c, llmProvider };
 }

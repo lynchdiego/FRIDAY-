@@ -22,7 +22,7 @@ export function createAnthropicLlm(apiKey: string): Llm {
           output_config: { effort: req.effort },
           cache_control: { type: 'ephemeral' },
           system: req.system,
-          tools: req.tools,
+          ...(req.tools.length ? { tools: req.tools } : {}),
           messages: req.messages,
         });
         const u = res.usage;

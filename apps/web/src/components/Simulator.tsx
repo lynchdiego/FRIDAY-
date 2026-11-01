@@ -11,7 +11,7 @@ export function Simulator({ view, setView, onConfirm }: { view: string; setView:
       <div className="sim-row">
         <span className="label">Pantalla</span>
         <div className="seg">
-          {[['inicio', 'Inicio'], ['hoy', 'Resumen'], ['conversacion', 'Conversación']].map(([k, l]) =>
+          {[['inicio', 'Inicio'], ['hoy', 'Resumen'], ['conversacion', 'Conversación'], ['habilidades', 'Permisos']].map(([k, l]) =>
             <button key={k} className={`chip ${view === k ? 'on' : ''}`} onClick={() => setView(k)}>{l}</button>)}
           <button className="chip" onClick={onConfirm}>Confirmación</button>
         </div>

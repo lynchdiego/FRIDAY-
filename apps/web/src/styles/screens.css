@@ -118,7 +118,7 @@ textarea.confirm-body { background: rgba(255,255,255,.04); border: 1px solid var
 .chip.on { background: var(--text); color: var(--bg); border-color: var(--text); }
 @media (max-width: 599px) {
   .sim { top: max(12px, env(safe-area-inset-top)); bottom: auto; left: 16px; right: 16px; }
-  .sim:not([open]) { left: auto; right: 16px; padding: 6px 14px; }
+  .sim:not([open]) { left: 50%; right: auto; transform: translateX(-50%); padding: 6px 14px; }
 }
 
 /* ---------- Pantalla 3: conversación ---------- */
@@ -162,3 +162,27 @@ textarea.confirm-body { background: rgba(255,255,255,.04); border: 1px solid var
 .login-title { font-size: 28px; letter-spacing: -0.04em; }
 .login-field { width: min(360px, 100%); }
 .btn:disabled, .send:disabled { opacity: .5; cursor: default; }
+
+/* ---------- Pantalla 5: habilidades y permisos ---------- */
+.skills { max-width: 860px; margin: 0 auto; padding: max(16px, env(safe-area-inset-top)) 20px 80px; display: flex; flex-direction: column; gap: 22px; }
+.skills-title { font-size: clamp(36px, 7vw, 64px); letter-spacing: -0.06em; margin-top: 12px; }
+.skills-sub { margin-top: -10px; max-width: 520px; }
+.conn { padding: 4px 20px; }
+.conn-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; min-height: 64px; }
+.conn-row + .conn-row { border-top: 1px solid var(--line); }
+.conn-row a.btn { text-decoration: none; }
+.skill-group-title { font-size: 24px; letter-spacing: -0.045em; margin-bottom: 4px; }
+.skill-list { list-style: none; padding: 0; }
+.skill-list li { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px 0; border-top: 1px solid var(--line); }
+.skill-list li.soon { opacity: .55; }
+.skill-name { font-size: 16px; letter-spacing: -0.015em; }
+.skill-desc { margin-top: 2px; }
+.perm { flex: none; display: inline-flex; align-items: center; height: 30px; padding: 0 14px; border-radius: var(--r-pill); font-size: 13px; white-space: nowrap; }
+.perm-LEE { background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.38); color: var(--text-3); }
+.perm-PROPONE { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.18); box-shadow: inset 0 1px 0 rgba(255,255,255,.22); color: var(--text); }
+.perm-ACTUA { background: var(--text); color: var(--bg); font-weight: 500; }
+.perm-NUNCA { border: 1px solid var(--line); color: var(--text-2); text-decoration: line-through; }
+.never { border-radius: var(--r-card); padding: 20px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.never ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.never li { color: var(--text-3); text-decoration: line-through; text-decoration-color: rgba(255,255,255,.35); }
+@media (max-width: 599px) { .skill-list li { align-items: flex-start; } }

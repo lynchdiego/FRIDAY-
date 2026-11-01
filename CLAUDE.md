@@ -5,8 +5,8 @@ Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NO
 ## Estado de etapas
 1. Plan — **aprobado** (`docs/plan-etapa-1.md`).
 2. Interfaz y Möbius — **aprobado** (2026-11-01). Ajustes posteriores: estados más distintos; Inicio responsivo para iPhone.
-3. Cerebro por texto — **hecho, pendiente de aprobación** (`docs/etapa-3.md`). 15 pruebas pasan con Claude simulado. Falta la prueba corta con Claude real (`npm run test:live`) cuando Diego tenga su llave.
-4. Google (Calendar, Gmail, **Tasks**) — siguiente. Se construye con simuladores; las cuentas reales se conectan al final.
+3. Cerebro por texto — **aprobado** (2026-11-01). Falta la prueba corta con Claude real (`npm run test:live`) cuando Diego tenga su llave.
+4. Google (Calendar, Gmail, **Tasks**) + resumen del día + pantalla 5 — **hecho, pendiente de aprobación** (`docs/etapa-4.md`). 23 pruebas pasan. Google real listo pero sin conectar (guía: `docs/google-setup.md`).
 5. Voz — después de la 4. Igual: simuladores/voz del navegador y ElevenLabs al final.
 6–7. Sin empezar.
 
@@ -28,7 +28,10 @@ Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NO
 - **BD**: PostgreSQL; en desarrollo/pruebas PGlite (sin Docker). Migraciones SQL en `apps/server/src/db/migrations`. Se usa SQL directo (no Drizzle): más simple de leer; cambio respecto al plan.
 - **Costos**: `usage_log` por llamada; `llm/pricing.ts` (Sonnet 5.5 $2/$10, Opus 5.5 $4/$20, caché $0.20). Límite diario → modo básico sin llamar al modelo.
 - **Sesión**: contraseña única (`FRIDAY_PASSWORD`), cookie httpOnly, 5 intentos/15 min.
-- Integraciones: `integrations/types.ts` (contratos) + `mock.ts` (datos ficticios con correo malicioso). Etapa 4 agrega `google.ts` con la misma forma.
+- Integraciones: `integrations/types.ts` (contratos Calendar/Mail/Tasks) + `mock.ts` (datos ficticios con correo malicioso) + `google.ts` (real: `@googleapis/*` + `google-auth-library`). Selección con `INTEGRATIONS=mock|google`. Scopes: calendar.events, gmail.readonly, gmail.compose, tasks, openid, email. OAuth: `/api/google/connect` → Google → `/api/google/callback` validado con `oauth_states` (la cookie es SameSite=strict y no viaja en ese salto). Tokens cifrados en `google_connections`; se re-cifran al refrescarse.
+- Pendientes = Google Tasks (`integ.tasks`); la tabla `tasks` local quedó sin uso.
+- Resumen del día: `agent/today.ts` → `GET /api/today` (prioridad: modelo 1×/día en `settings`, o heurística con el simulado). Web: `state/today.ts` (`toView`).
+- Pantalla 5: `apps/web/src/screens/Skills.tsx` (lee `/api/skills`; cada habilidad tiene `help` para Diego y `description` para el modelo).
 - Web: `state/chat.ts` (modo `server` o `demo` si no hay servidor), `screens/Chat.tsx` (pantalla 3), `components/Cards.tsx`, `ConfirmSheet.tsx` (pantalla 4 real). Horas siempre en la zona de Diego (`/api/me`).
 - Möbius: `apps/web/src/mobius/` (`Mobius.ts` motor y `TARGETS` por estado, `shaders.ts`, `presence.ts`). Etapa 5: `presence.set` recibe el nivel real de audio.
 
@@ -43,6 +46,7 @@ Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NO
 
 ## Pendientes
 - Prueba con Claude real (Diego crea cuenta en platform.claude.com, US$10 de saldo, límite mensual ~US$20).
-- Etapa 4: Google real + Tasks; pantalla de Habilidades y permisos (leer `/api/skills`).
+- Conectar el Google real de Diego (`docs/google-setup.md`) — al final, según el plan de llaves.
+- Etapa 5: voz.
 - Verificar precios de ElevenLabs y STT en páginas oficiales antes de la etapa 5.
 - Resumir historial por día (`summaries`) cuando las conversaciones crezcan.

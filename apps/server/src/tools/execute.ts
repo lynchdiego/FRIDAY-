@@ -71,7 +71,7 @@ async function runReadOrPropose(name: ToolName, input: any, ctx: ToolContext): P
       ctx.turn.untrustedSeen = true;
       const items = await integ.calendar.list(inTz(input.from, tz), inTz(input.to, tz));
       const view = items.map((e) => ({ ...e, inicio_local: fmt(e.start, tz), fin_local: fmt(e.end, tz) }));
-      return { content: untrusted('calendario', view), cards: [{ type: 'events', items: items.map(({ id, title, start, end, location }) => ({ id, title, start, end, location })) }] };
+      return { content: untrusted('calendario', view), cards: [{ type: 'events', items: items.map(({ id, title, start, end, allDay, location }) => ({ id, title, start, end, allDay, location })) }] };
     }
     case 'gmail_search': {
       ctx.turn.untrustedSeen = true;
@@ -91,18 +91,16 @@ async function runReadOrPropose(name: ToolName, input: any, ctx: ToolContext): P
       return { content: `Borrador guardado en Gmail (id ${r.draftId}). No se envió.`, cards: [{ type: 'draft', to: input.to, subject: input.subject, body: input.body }] };
     }
     case 'tasks_list': {
-      const r = await db.query<any>('SELECT id, title, due_at FROM tasks WHERE user_id=$1 AND NOT done ORDER BY due_at NULLS LAST, id', [userId]);
-      const items = r.rows.map((t) => ({ id: t.id, title: t.title, due: t.due_at ? new Date(t.due_at).toISOString() : undefined }));
-      return { content: JSON.stringify(items), cards: [{ type: 'tasks', items }] };
+      const items = await integ.tasks.list();
+      return { content: untrusted('google_tasks', items), cards: [{ type: 'tasks', items: items.map(({ id, title, due }) => ({ id, title, due })) }] };
     }
     case 'task_add': {
-      const due = input.due ? inTz(input.due, tz) : null;
-      const r = await db.query<any>('INSERT INTO tasks(user_id, title, due_at) VALUES ($1,$2,$3) RETURNING id', [userId, input.title, due]);
-      return { content: `Pendiente anotado (id ${r.rows[0].id}).`, cards: [{ type: 'task', title: input.title, due: due ?? undefined }] };
+      const t = await integ.tasks.add(input.title, input.due ? inTz(input.due, tz) : undefined, input.notes);
+      return { content: `Pendiente anotado en Google Tasks (id ${t.id}).`, cards: [{ type: 'task', title: t.title, due: t.due }] };
     }
     case 'task_complete': {
-      const r = await db.query('UPDATE tasks SET done=true, done_at=now() WHERE id=$1 AND user_id=$2 RETURNING id', [input.id, userId]);
-      return r.rows.length ? { content: `Pendiente ${input.id} marcado como hecho.`, cards: [] } : { content: `ERROR: no existe el pendiente ${input.id}.`, isError: true, cards: [] };
+      await integ.tasks.complete(input.id);
+      return { content: `Pendiente ${input.id} marcado como hecho.`, cards: [] };
     }
     case 'reminder_add': {
       const at = inTz(input.at, tz);

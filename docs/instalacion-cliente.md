@@ -19,7 +19,9 @@
 ## 2. Google
 - **Workspace del cliente:** app "Interna" → sin verificación de Google.
 - **Gmail personal:** app "Externa" en producción sin verificar (aviso de "app no verificada" una vez), o verificación formal si se escala. *(Detalle en etapa 4.)*
-- Permisos mínimos: Calendar (leer/editar eventos), Gmail (leer, borradores, enviar), Tasks.
+- Permisos mínimos: Calendar (`calendar.events`), Gmail (`gmail.readonly` + `gmail.compose`), Tasks (`tasks`), `openid`, `email`.
+- Pasos detallados: `docs/google-setup.md` (cambiar el URI de redirección por el dominio del cliente).
+- Gmail personal en producción sin verificar: tope de 100 usuarios **de por vida por proyecto** → un proyecto de Google Cloud por cliente.
 
 ## 3. Configuración
 1. Clonar el repositorio de FRIDAY para el cliente.
