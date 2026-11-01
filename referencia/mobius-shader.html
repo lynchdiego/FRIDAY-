@@ -1,0 +1,61 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>FRIDAY — referencia del shader de la Möbius</title></head><body style="margin:0;background:#000">
+<!-- Referencia para Claude Code: geometría paramétrica deformable + iluminación de bordes/especular/flujo.
+     Falta el postproceso (bloom, grano, aberración cromática y viñeta) que se agregó en las animaciones de referencia.
+     Clic en la pantalla: alterna entre "en calma" y "te escucha". -->
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.169.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+const S=720;
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(S,S);renderer.setClearColor(0x000000,1);
+document.body.appendChild(renderer.domElement);
+const scene=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(30,1,0.1,100);cam.position.set(0,0,7.3);
+const NU=900,NV=36,uv=[],idx=[];
+for(let i=0;i<=NU;i++)for(let j=0;j<=NV;j++){uv.push(i/NU,j/NV*2-1);}
+for(let i=0;i<NU;i++)for(let j=0;j<NV;j++){const a=i*(NV+1)+j,b=a+NV+1;idx.push(a,b,a+1,b,b+1,a+1);}
+const g=new THREE.BufferGeometry();
+g.setAttribute('position',new THREE.Float32BufferAttribute(new Array(uv.length/2*3).fill(0),3));
+g.setAttribute('suv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);
+const U={t:{value:0},amp:{value:0.25},speak:{value:0},spd:{value:1}};
+const common=`
+uniform float t,amp,speak,spd;
+vec3 P(float U,float v){float T=t*6.2831853*spd;
+ float R=1.0+0.05*sin(2.0*U-T)+amp*(0.07*sin(3.0*U+2.0*T)+0.045*sin(5.0*U-3.0*T));
+ float W=0.34*(1.0+0.10*sin(2.0*U+T)+amp*0.28*sin(4.0*U-2.0*T));
+ float vv=v*W; float ph=U*0.5+amp*0.18*sin(2.0*U+T);
+ return vec3((R+vv*cos(ph))*cos(U)*1.08,(R+vv*cos(ph))*sin(U)*0.92,vv*sin(ph)*1.15+amp*0.09*sin(3.0*U-2.0*T));}
+`;
+const mat=new THREE.ShaderMaterial({uniforms:U,side:THREE.DoubleSide,vertexShader:common+`
+attribute vec2 suv; varying vec3 vN; varying vec3 vW; varying vec2 vUV;
+void main(){float Uu=suv.x*6.2831853; float v=suv.y;
+ vec3 p=P(Uu,v); vec3 du=P(Uu+0.002,v)-p; vec3 dv=P(Uu,v+0.01)-p;
+ vec3 n=normalize(cross(du,dv));
+ vec4 w=modelMatrix*vec4(p,1.0); vW=w.xyz; vN=normalize(mat3(modelMatrix)*n); vUV=vec2(Uu,v);
+ gl_Position=projectionMatrix*viewMatrix*w;}`,
+fragmentShader:`
+uniform float t,amp,speak,spd; varying vec3 vN; varying vec3 vW; varying vec2 vUV;
+void main(){vec3 N=normalize(vN); vec3 V=normalize(cameraPosition-vW); if(dot(N,V)<0.0)N=-N;
+ float T=t*6.2831853*spd; float Uu=vUV.x; float v=vUV.y;
+ float rim=pow(1.0-abs(dot(N,V)),7.0);
+ vec3 L1=normalize(vec3(cos(t*6.2831853)*0.9,0.8,0.7+0.3*sin(t*6.2831853)));
+ float spec=pow(max(dot(N,normalize(L1+V)),0.0),220.0);
+ vec3 L2=normalize(vec3(-0.6,-0.5,0.4));
+ float spec2=pow(max(dot(N,normalize(L2+V)),0.0),60.0)*0.25;
+ float flow=pow(0.5+0.5*sin(Uu*2.0-T*2.0+v*1.4),40.0)*(0.3+speak*1.1);
+ float edge=smoothstep(0.92,1.0,abs(v));
+ float I=0.006+rim*0.9+spec*2.6+spec2+flow*(0.25+rim*2.0)+edge*(0.10+spec*2.0+flow*1.6+rim*0.8);
+ gl_FragColor=vec4(vec3(I)*vec3(1.0,0.975,0.96),1.0);}`});
+const mesh=new THREE.Mesh(g,mat); mesh.frustumCulled=false;
+const grp=new THREE.Group();grp.add(mesh);scene.add(grp);
+window.frame=(ph,mode,sub)=>{const T=ph*Math.PI*2;
+ if(mode==='idle'){U.amp.value=0.28;U.speak.value=0;U.spd.value=1;}
+ else{let e=0.55+0.25*Math.sin(3*T)+0.15*Math.sin(7*T+1)+0.1*Math.sin(11*T+2);e=Math.max(0,e);U.amp.value=0.3+0.45*e;U.speak.value=e;U.spd.value=2;}
+ U.t.value=ph;
+ grp.rotation.x=-0.80+0.07*Math.sin(T);grp.rotation.y=0.16*Math.sin(T+0.7);grp.rotation.z=0.25+0.12*Math.sin(T);
+ mesh.rotation.z=0.4*Math.sin(T)+(mode==='idle'?0:0.05*Math.sin(4*T));
+ renderer.render(scene,cam);};
+let mode='idle',t0=performance.now();
+document.body.addEventListener('click',()=>{mode=mode==='idle'?'speak':'idle';});
+function loop(){const el=(performance.now()-t0)/1000;const ph=mode==='idle'?(el/8)%1:(el/4)%1;window.frame(ph,mode);requestAnimationFrame(loop);}loop();
+</script></body></html>
