@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>FRIDAY — prototipo de exploración</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root { --paper: #F4ECD8; --ink: #2B2A28; --graphite: #4A4944; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; background: #2a5cb8; overflow: hidden; font-family: Inter, system-ui, sans-serif; color: var(--ink); }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  .brand { position: fixed; top: calc(22px + env(safe-area-inset-top, 0px)); left: calc(26px + env(safe-area-inset-left, 0px)); letter-spacing: .5em; font-size: 13px; color: #fff; text-shadow: 0 1px 8px rgba(20,40,90,.35); }
+  .greet { position: fixed; top: 15vh; left: 0; right: 0; text-align: center; color: #fff; pointer-events: none; text-shadow: 0 2px 18px rgba(20,40,90,.35); }
+  .greet h1 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: clamp(40px, 6vw, 72px); letter-spacing: -0.01em; }
+  .greet p { font-size: 15px; opacity: .92; margin-top: 4px; }
+  .pill { position: fixed; bottom: calc(7vh + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; padding: 10px 22px; min-height: 56px;
+    background: var(--paper); border-radius: 999px; font-family: 'Instrument Serif', serif; font-size: 22px; color: var(--graphite);
+    box-shadow: 0 10px 30px rgba(20,40,90,.25), inset 0 0 0 1.5px rgba(60,58,52,.55); }
+  .pill span.sep { width: 1px; height: 26px; background: rgba(60,58,52,.4); }
+  .lab { position: fixed; right: calc(14px + env(safe-area-inset-right, 0px)); top: calc(60px + env(safe-area-inset-top, 0px)); width: 230px; background: rgba(244,236,216,.93); border-radius: 16px; padding: 12px; font-size: 12px;
+    box-shadow: 0 8px 24px rgba(20,40,90,.25), inset 0 0 0 1px rgba(60,58,52,.45); display: flex; flex-direction: column; gap: 8px; }
+  .lab b { font-weight: 500; }
+  .lab .row { display: flex; flex-wrap: wrap; gap: 4px; }
+  .lab button { font: inherit; border: 1px solid rgba(60,58,52,.5); background: transparent; border-radius: 999px; padding: 5px 9px; cursor: pointer; color: var(--ink); }
+  .lab button.on { background: var(--ink); color: var(--paper); }
+  .lab input { width: 100%; accent-color: #2B2A28; }
+  @media (max-width: 600px) { .lab { top: auto; bottom: calc(7vh + 70px); left: 12px; right: 12px; width: auto; } }
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div class="brand">F R I D A Y</div>
+<div class="greet"><h1>Hola, Diego.</h1><p>¿En qué trabajamos hoy?</p></div>
+<div class="pill" aria-hidden="true">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3c3b38" stroke-width="1.5" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+  <span class="sep"></span><span>Hablar</span><span class="sep"></span>
+  <svg width="26" height="22" viewBox="0 0 26 22" fill="none" stroke="#3c3b38" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="4" width="22" height="14" rx="2.5"/><path d="M6 8h1M10 8h1M14 8h1M18 8h1M6 11h1M10 11h1M14 11h1M18 11h1M8 14.5h10"/></svg>
+</div>
+<div class="lab" id="lab">
+  <b>Modo de prueba</b>
+  <div class="row" id="states"></div>
+  <label>Volumen simulado <input id="vol" type="range" min="0" max="1" step="0.01" value="0.6"></label>
+  <label>Hora del día <input id="hour" type="range" min="0" max="24" step="0.1" value="13"></label>
+  <span id="info"></span>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { Line2 } from 'three/addons/lines/Line2.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
+
+// ---------- Escena ----------
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+camera.position.set(0, 0, 9);
+
+// ---------- Cielo pintado (shader procedural) ----------
+const skyU = { time: { value: 0 }, hour: { value: 13 }, res: { value: new THREE.Vector2() }, par: { value: new THREE.Vector2() } };
+const sky = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({
+  uniforms: skyU, depthWrite: false, depthTest: false,
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+  fragmentShader: /* glsl */`
+  uniform float time, hour; uniform vec2 res, par; varying vec2 vUv;
+  float h(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }
+  float n(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
+    return mix(mix(h(i),h(i+vec2(1,0)),f.x), mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x), f.y); }
+  float fbm(vec2 p){ float s=0.0, a=0.5; for(int i=0;i<6;i++){ s+=a*n(p); p=p*2.03+vec2(17.0,9.0); a*=0.5; } return s; }
+  // Paleta según la hora (amanecer, día, atardecer, noche)
+  vec3 skyTop(float t){ vec3 night=vec3(.05,.08,.22), dawn=vec3(.36,.45,.75), day=vec3(.10,.33,.78), dusk=vec3(.25,.25,.6);
+    float d = smoothstep(5.0,7.0,t)*(1.0-smoothstep(18.0,20.0,t));
+    float warm = exp(-pow((t-6.5)/1.2,2.0)) + exp(-pow((t-18.5)/1.2,2.0));
+    return mix(mix(night, day, d), mix(dawn,dusk,step(12.0,t)), warm*0.7); }
+  vec3 top3(float t){ return skyTop(t); }
+  vec3 sunCol(float t){ return mix(vec3(1.0,.93,.75), vec3(1.0,.72,.42), exp(-pow((t-6.5)/1.5,2.0)) + exp(-pow((t-18.5)/1.5,2.0))); }
+  void main(){
+    vec2 uv = vUv; float asp = res.x/res.y; vec2 p = vec2((uv.x-.5)*asp, uv.y-.5);
+    float t = hour; float day = smoothstep(5.0,7.0,t)*(1.0-smoothstep(18.5,20.5,t));
+    // posición del sol (o la luna) en un arco
+    float a = (t-6.0)/12.0*3.14159; vec2 sun = vec2(cos(a)*-0.75*asp*0.6, sin(a)*0.45 - 0.05);
+    if (day < 0.5) { float b = (t<6.0? t+24.0 : t); a=(b-18.0)/12.0*3.14159; sun = vec2(cos(a)*-0.6*asp*0.6, sin(a)*0.4); }
+    vec3 top = skyTop(t); vec3 horizon = mix(vec3(.12,.12,.25), mix(vec3(.85,.88,.95), sunCol(t), .35), day);
+    vec3 col = mix(horizon, top, smoothstep(-0.25, 0.45, p.y));
+    // trazos de lápiz de color en el cielo (achurado diagonal irregular)
+    vec2 hp = gl_FragCoord.xy; float stroke = n(vec2(hp.x*0.9 + hp.y*0.35, hp.y*0.08) ) ;
+    col *= 0.96 + 0.06*stroke;
+    float sd = length(p - sun);
+    col += sunCol(t) * (0.55*exp(-sd*6.0) + 0.25*exp(-sd*1.8)) * mix(0.25, 1.0, day);
+    // estrellas dibujadas de noche
+    if (day < 0.6) { vec2 g = floor(hp/3.0); float s = step(0.9965, h(g)); col += s * (1.0-day) * vec3(.9,.92,1.0) * (0.6+0.4*sin(time*2.0+h(g)*30.0)); }
+    // mar y montañas a lo lejos
+    float hz = -0.36 + par.y*0.01;
+    float m = hz + 0.05*fbm(vec2(p.x*3.0 + par.x*0.04, 1.0)) ;
+    if (p.y < m) { vec3 mount = mix(vec3(.22,.32,.55), vec3(.45,.55,.75), 0.5+0.5*(p.y-hz)/0.05); col = mix(col, mount*mix(.35,1.0,day), 0.85); }
+    if (p.y < hz) { float w = n(vec2(p.x*40.0, (p.y)*300.0 - time*0.6)); vec3 sea = mix(vec3(.10,.24,.55), vec3(.25,.45,.8), w*0.6) * mix(.3,1.0,day);
+      float glint = exp(-abs(p.x - sun.x)*8.0) * step(0.7, w) * day; col = sea + sunCol(t)*glint*0.5; }
+    // nubes en capas con volumen (luz hacia el sol, sombra azulada) y contorno de grafito
+    for (int L=0; L<4; L++){
+      float fl = float(L);
+      // cúmulos: masas redondeadas (ruido de baja frecuencia elevado al cubo) con base plana
+      float sc = 1.1 + fl*0.55; float spd = 0.003 + fl*0.003;
+      vec2 q = p*vec2(sc, sc*1.6) + vec2(time*spd + par.x*(0.02+fl*0.03) + fl*7.3, par.y*(0.02+fl*0.03));
+      float base = -0.36 + fl*0.07;                 // las nubes bajas están más cerca del horizonte
+      float top = base + 0.42 - fl*0.06;
+      float mask = smoothstep(base-0.02, base+0.05, p.y) * (1.0 - smoothstep(top-0.15, top, p.y));
+      float side = fl < 1.0 ? 1.0 : smoothstep(0.15, 0.75, abs(p.x)/asp*2.0 + 0.1*fl);   // marco de nubes a los lados
+      float big = fbm(q*0.8);
+      float d = pow(big, 1.5)*1.6 * mask * side + 0.22*fbm(q*3.0 + time*0.01)*mask*side;
+      float th = 0.38;
+      float cov = smoothstep(th, th+0.04, d);
+      // volumen: luz desde arriba y hacia el sol; la parte baja de cada masa en sombra azulada
+      float up = clamp((p.y - base)/(top - base), 0.0, 1.0);
+      float toSun = clamp(dot(normalize(vec2(dFdx(d), dFdy(d))*-1.0 + 1e-5), normalize(sun - p))*0.5+0.5, 0.0, 1.0);
+      float lit = clamp(0.35*up + 0.5*toSun + 0.35*smoothstep(th, th+0.35, d), 0.0, 1.0);
+      vec3 cream = mix(vec3(.98,.95,.86), sunCol(t), 0.3); vec3 shade = mix(vec3(.66,.71,.84), top3(t), 0.2);
+      vec3 cc = mix(shade, cream, lit) * mix(0.35, 1.0, day);
+      cc *= 0.94 + 0.08*n(vec2(hp.x*0.5 + hp.y*0.5, hp.y*0.12) + fl*13.0); // trazo de lápiz de color dentro de la nube
+      col = mix(col, cc, cov);
+      float edge = smoothstep(0.018, 0.0, abs(d - th - 0.01)) * (0.3 + 0.5*n(hp*0.12 + fl));
+      col = mix(col, vec3(.36,.38,.46), edge*0.5); // contorno de grafito irregular
+    }
+    // grano de papel y viñeta
+    col *= 0.95 + 0.07*n(hp*0.7) + 0.03*h(hp);
+    col *= 1.0 - 0.28*dot(uv-0.5, uv-0.5)*1.6;
+    gl_FragColor = vec4(col, 1.0);
+  }`,
+}));
+sky.frustumCulled = false; sky.renderOrder = -1;
+scene.add(sky);
+
+// ---------- Utilidades de "dibujo a mano" ----------
+const lineMats = [];
+function inkMat(width, color = 0x2b2a28, opacity = 1) {
+  const m = new LineMaterial({ color, linewidth: width, transparent: opacity < 1, opacity, worldUnits: false });
+  lineMats.push(m); return m;
+}
+const boilers = [];
+/** Línea que "tiembla" como animación dibujada a mano (se redibuja 8 veces por segundo). */
+function sketchLine(points, width = 2.4, opts = {}) {
+  const geo = new LineGeometry();
+  const line = new Line2(geo, inkMat(width, opts.color, opts.opacity ?? 1));
+  const base = points.map((p) => p.clone());
+  const j = opts.jitter ?? 0.012;
+  const redraw = () => {
+    const pos = [];
+    base.forEach((p) => pos.push(p.x + (Math.random() - .5) * j, p.y + (Math.random() - .5) * j, p.z + (Math.random() - .5) * j));
+    geo.setPositions(pos); line.computeLineDistances();
+  };
+  redraw(); boilers.push(redraw); line.userData.base = base; line.userData.redraw = redraw;
+  return line;
+}
+const seg = (a, b, n = 6, over = 0.04) => {
+  // trazo con ligero "sobrepaso" en los extremos, como un dibujante seguro
+  const d = b.clone().sub(a); const pts = [];
+  for (let i = 0; i <= n; i++) pts.push(a.clone().addScaledVector(d, -over + (1 + 2 * over) * i / n));
+  return pts;
+};
+
+// ---------- Personaje ----------
+const SIZE = 1.25;
+const char = new THREE.Group(); scene.add(char);
+const body = new THREE.Group(); char.add(body);
+const sunDir = new THREE.Vector3(-0.35, 0.65, 0.9).normalize();
+const paperU = { sun: { value: sunDir }, time: { value: 0 }, warm: { value: new THREE.Color(1, .95, .85) } };
+const cubeMat = new THREE.ShaderMaterial({
+  uniforms: paperU,
+  vertexShader: `varying vec3 vN; varying vec3 vP; void main(){ vN = normalize(normalMatrix*normal); vP = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+  fragmentShader: /* glsl */`
+  uniform vec3 sun, warm; uniform float time; varying vec3 vN; varying vec3 vP;
+  float h(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }
+  void main(){
+    float l = dot(normalize(vN), normalize((viewMatrix*vec4(sun,0.0)).xyz))*0.5+0.5;
+    vec3 paper = vec3(.96,.92,.82) * warm;
+    vec2 fc = gl_FragCoord.xy;
+    float t = floor(time*8.0); // el achurado "hierve" a 8 cuadros por segundo
+    float wob = h(floor(fc/40.0)+t)*1.5;
+    float hatch1 = step(0.55, fract((fc.x + fc.y + wob)/6.0)) ;
+    float hatch2 = step(0.6, fract((fc.x - fc.y + wob)/5.0));
+    float shade = 0.0;
+    if (l < 0.62) shade += hatch1*0.35;
+    if (l < 0.40) shade += hatch2*0.35;
+    vec3 col = paper * (0.82 + 0.22*l);
+    col = mix(col, vec3(.28,.28,.3), shade);
+    col *= 0.94 + 0.08*h(fc*0.5);
+    gl_FragColor = vec4(col, 1.0);
+  }`,
+});
+const cube = new THREE.Mesh(new THREE.BoxGeometry(SIZE, SIZE, SIZE), cubeMat);
+body.add(cube);
+// contornos y líneas de construcción (diagonales de las caras, como un poliedro dibujado)
+const s = SIZE / 2;
+const V = [[-s,-s,-s],[s,-s,-s],[s,s,-s],[-s,s,-s],[-s,-s,s],[s,-s,s],[s,s,s],[-s,s,s]].map((v) => new THREE.Vector3(...v));
+const E = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+E.forEach(([a, b]) => body.add(sketchLine(seg(V[a], V[b]), 3.0)));
+[[4,6],[0,2],[1,6],[3,4]].forEach(([a, b]) => body.add(sketchLine(seg(V[a], V[b], 6, 0), 1.1, { opacity: 0.45 })));
+
+// ojos
+function makeEye(x) {
+  const g = new THREE.Group(); g.position.set(x, 0.12, s + 0.004);
+  const white = new THREE.Mesh(new THREE.CircleGeometry(0.19, 40), new THREE.MeshBasicMaterial({ color: 0xfbf7ec }));
+  g.add(white);
+  g.add(sketchLine(Array.from({ length: 41 }, (_, i) => new THREE.Vector3(Math.cos(i / 40 * 6.283) * 0.19, Math.sin(i / 40 * 6.283) * 0.19, 0.002)), 2.2, { jitter: 0.008 }));
+  const iris = new THREE.Group(); iris.position.z = 0.003; g.add(iris);
+  const pupil = new THREE.Mesh(new THREE.CircleGeometry(0.115, 40), new THREE.MeshBasicMaterial({ color: 0x1d1c1b }));
+  iris.add(pupil);
+  const hl1 = new THREE.Mesh(new THREE.CircleGeometry(0.035, 20), new THREE.MeshBasicMaterial({ color: 0xffffff })); hl1.position.set(0.04, 0.045, 0.002);
+  const hl2 = new THREE.Mesh(new THREE.CircleGeometry(0.016, 16), new THREE.MeshBasicMaterial({ color: 0xffffff })); hl2.position.set(-0.035, -0.035, 0.002);
+  iris.add(hl1, hl2);
+  // párpado: papel recortado dentro del círculo del ojo; baja desde arriba hasta "cut"
+  const lidU = { cut: { value: 1 } };
+  const lid = new THREE.Mesh(new THREE.CircleGeometry(0.195, 40), new THREE.ShaderMaterial({
+    uniforms: lidU, transparent: true,
+    vertexShader: 'varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+    fragmentShader: 'uniform float cut; varying vec2 vP; void main(){ if (vP.y < cut) discard; gl_FragColor = vec4(0.94,0.91,0.83,1.0); }',
+  }));
+  lid.position.z = 0.006; g.add(lid);
+  const lidPivot = new THREE.Group(); lidPivot.position.z = 0.008; g.add(lidPivot);
+  const lidLine = sketchLine(seg(new THREE.Vector3(-0.19, 0, 0), new THREE.Vector3(0.19, 0, 0), 8, 0), 2.6); lidPivot.add(lidLine);
+  lid.userData.u = lidU;
+  const brow = sketchLine([new THREE.Vector3(-0.15, 0, 0), new THREE.Vector3(0, 0.035, 0), new THREE.Vector3(0.15, 0, 0)], 3.2, { jitter: 0.01 });
+  brow.position.set(0, 0.29, 0.003); g.add(brow);
+  return { g, iris, pupil, lidPivot, lid, brow, white };
+}
+const eyeL = makeEye(-0.27), eyeR = makeEye(0.27);
+body.add(eyeL.g, eyeR.g);
+// boca (solo al hablar)
+const mouth = new THREE.Mesh(new THREE.CircleGeometry(0.09, 32), new THREE.MeshBasicMaterial({ color: 0x3a1f1a }));
+mouth.position.set(0, -0.25, s + 0.005); body.add(mouth);
+
+// anillo de órbita
+const ring = new THREE.Group(); char.add(ring);
+const ringLine = sketchLine(Array.from({ length: 97 }, (_, i) => new THREE.Vector3(Math.cos(i / 96 * 6.283) * 1.55, 0, Math.sin(i / 96 * 6.283) * 1.55)), 1.8, { jitter: 0.02 });
+ring.add(ringLine);
+const bead = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), new THREE.MeshBasicMaterial({ color: 0x2b2a28 }));
+ring.add(bead);
+ring.rotation.set(0.32, 0, -0.18);
+
+// tarjeta de papel (confirma)
+const card = new THREE.Group();
+const cardPlane = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.8), new THREE.MeshBasicMaterial({ color: 0xf6efdd }));
+card.add(cardPlane);
+[[-.6,-.4,.6,-.4],[.6,-.4,.6,.4],[.6,.4,-.6,.4],[-.6,.4,-.6,-.4]].forEach(([a,b,c,d]) => card.add(sketchLine(seg(new THREE.Vector3(a,b,.002), new THREE.Vector3(c,d,.002)), 2.2)));
+[0.18, 0.02, -0.14].forEach((y, i) => card.add(sketchLine(seg(new THREE.Vector3(-.45, y, .003), new THREE.Vector3(i === 0 ? .2 : .42, y, .003), 6, 0), i === 0 ? 3 : 1.4, { opacity: i === 0 ? 1 : .6 })));
+card.position.set(0.15, -1.15, 1.1); card.scale.setScalar(0.001); char.add(card);
+
+// líneas de construcción en el aire (piensa)
+const construct = new THREE.Group(); char.add(construct);
+const vps = [new THREE.Vector3(-3.2, 1.6, -1), new THREE.Vector3(3.2, 1.4, -1), new THREE.Vector3(0, 3.2, -1)];
+const cLines = [];
+for (let i = 0; i < 12; i++) {
+  const vp = vps[i % 3]; const corner = V[(i * 3) % 8];
+  const l = sketchLine(seg(corner, vp, 4, 0), 1.0, { opacity: 0.55, color: 0x3c3b38 });
+  l.userData.vp = vp; l.userData.corner = corner; construct.add(l); cLines.push(l);
+}
+// chispas (contento)
+const sparks = new THREE.Group(); char.add(sparks);
+const sparkList = Array.from({ length: 10 }, (_, i) => {
+  const a = i / 10 * 6.283; const dir = new THREE.Vector3(Math.cos(a), Math.sin(a), 0.2);
+  const l = sketchLine([new THREE.Vector3(), dir.clone().multiplyScalar(0.25)], 2.2, { opacity: 0.9 }); l.userData.dir = dir; sparks.add(l); return l;
+});
+
+// ---------- Resortes (todo el movimiento) ----------
+class Spring { constructor(x, k = 120, d = 14) { this.x = x; this.v = 0; this.t = x; this.k = k; this.d = d; }
+  step(dt) { const a = -this.k * (this.x - this.t) - this.d * this.v; this.v += a * dt; this.x += this.v * dt; return this.x; } }
+const S = {
+  x: new Spring(0, 60, 9), y: new Spring(0, 60, 9), z: new Spring(0, 50, 10),
+  rx: new Spring(0, 70, 10), ry: new Spring(0, 70, 10), rz: new Spring(0, 70, 10),
+  sx: new Spring(1, 260, 12), sy: new Spring(1, 260, 12),   // estirar y encoger
+  lid: new Spring(0, 400, 26), eyeX: new Spring(0, 700, 38), eyeY: new Spring(0, 700, 38), pupil: new Spring(1, 160, 16),
+  brow: new Spring(0, 200, 18), browTilt: new Spring(0, 200, 18), mouth: new Spring(0, 500, 30), ringSpd: new Spring(0.4, 30, 8),
+  card: new Spring(0, 140, 14), think: new Spring(0, 40, 10), spark: new Spring(0, 30, 6), warm: new Spring(0, 20, 8),
+};
+
+// ---------- Estados ----------
+const STATES = ['calma', 'escucha', 'piensa', 'habla', 'contento', 'confirma', 'error', 'duerme'];
+let state = 'calma', stateT = 0;
+const audio = { level: 0.6 };
+function setState(st) {
+  if (st === state) return;
+  // anticipación: un pequeño encogimiento antes de cada cambio
+  S.sy.v -= 2.5; S.sx.v += 1.5;
+  if (st === 'contento') { S.y.v += 9; S.ry.v += 26; S.sy.v += 6; S.spark.x = 0; S.spark.v = 6; }
+  if (st === 'error') { S.sy.v -= 3; }
+  state = st; stateT = 0; renderButtons();
+}
+
+// mirada: sacádicos + seguir el cursor
+const mouse = new THREE.Vector2(0, 0); let mouseActive = 0; let nextSaccade = 0; let gaze = new THREE.Vector2();
+let nextBlink = 1.5, blinkT = -1;
+window.addEventListener('pointermove', (e) => { mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); mouseActive = 2.5; });
+
+// interacción física: clic, arrastrar y lanzar, acariciar
+const ray = new THREE.Raycaster(); let drag = null; let petting = 0; let lastP = null;
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  ray.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
+  if (ray.intersectObject(cube).length) { drag = { t: performance.now() }; S.sx.v += 3; S.sy.v -= 4; renderer.domElement.setPointerCapture(e.pointerId); }
+});
+renderer.domElement.addEventListener('pointermove', (e) => {
+  const ndc = new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hit = ray.intersectObject(cube).length > 0;
+  if (hit && !drag) petting = Math.min(1, petting + 0.05);
+  if (drag) {
+    const p = new THREE.Vector3(); ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), p);
+    const now = performance.now();
+    if (lastP) { const dt = Math.max(1, now - lastP.t) / 1000; drag.vx = (p.x - lastP.x) / dt; drag.vy = (p.y - lastP.y) / dt; }
+    lastP = { x: p.x, y: p.y, t: now };
+    S.x.x = p.x; S.y.x = p.y; S.x.v = 0; S.y.v = 0;
+  }
+});
+renderer.domElement.addEventListener('pointerup', () => {
+  if (drag) { S.x.v = (drag.vx ?? 0) * 0.9; S.y.v = (drag.vy ?? 0) * 0.9; S.rz.v += (drag.vx ?? 0) * 2; S.sy.v += 3; if (performance.now() - drag.t < 200 && !lastP) { S.y.v += 5; S.ry.v += 12; } }
+  drag = null; lastP = null;
+});
+
+// ---------- Bucle ----------
+const clock = new THREE.Clock(); let time = 0; let boilT = 0;
+function resize() {
+  renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight;
+  camera.fov = innerWidth < innerHeight ? 44 : 32; camera.updateProjectionMatrix();
+  skyU.res.value.set(innerWidth, innerHeight); lineMats.forEach((m) => m.resolution.set(innerWidth, innerHeight));
+}
+addEventListener('resize', resize); resize();
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function tick() {
+  requestAnimationFrame(tick);
+  const dt = Math.min(clock.getDelta(), 1 / 30); time += dt; stateT += dt;
+  mouseActive -= dt; petting = Math.max(0, petting - dt * 0.6);
+  const lv = (state === 'escucha' || state === 'habla') ? audio.level * (0.55 + 0.45 * Math.abs(Math.sin(time * 9.3) * Math.sin(time * 3.1 + 1))) : 0;
+
+  // objetivos por estado
+  const b = Math.sin(time * 1.3);
+  let tx = 0, ty = 0.05 * b, tz = 0, trx = 0.42 + 0.08 * Math.sin(time * 0.7), try_ = -0.55 + 0.18 * Math.sin(time * 0.4), trz = 0.06 * Math.sin(time * 0.9);
+  let brow = 0, browTilt = 0, pupil = 1, lidBase = 0, ringSpd = 0.4, cardT = 0, think = 0, mouthT = 0, look = null;
+  if (state === 'escucha') { tz = 1.6; trx = 0.3 + lv * 0.25 * Math.sin(time * 6); try_ = -0.25; trz = -0.12; brow = 0.05; pupil = 1.25; ringSpd = 1 + lv * 3; look = new THREE.Vector2(0, 0); }
+  if (state === 'piensa') { ty = 0.25 + 0.04 * b; trx = 0.1; try_ = -0.5 + 0.3 * Math.sin(time * 0.5); look = new THREE.Vector2(0.4 * Math.sin(time * 0.6), 0.9); brow = 0.08; browTilt = 0.15; ringSpd = 3.2; think = 1; }
+  if (state === 'habla') { tz = 0.8; ty = 0.05 * b + lv * 0.08; trx = 0.3 - lv * 0.12; try_ = -0.35; brow = lv * 0.08; mouthT = 0.25 + lv; ringSpd = 1.2; look = new THREE.Vector2(0, 0); }
+  if (state === 'contento') { ty = 0.2 + 0.08 * Math.abs(Math.sin(time * 4)); lidBase = 0.42; brow = 0.06; pupil = 1.3; ringSpd = 2.5; mouthT = 0.35; }
+  if (state === 'confirma') { tz = 1.0; ty = 0.35; trx = 0.25; try_ = -0.2; trz = 0; brow = -0.04; browTilt = -0.25; ringSpd = 0.2; cardT = 1; look = new THREE.Vector2(0, -0.05); }
+  if (state === 'error') { ty = -0.35; tz = -0.4; trx = 0.6; try_ = -0.45; trz = 0.1; brow = -0.02; browTilt = 0.35; pupil = 0.8; lidBase = 0.25; ringSpd = 0.15; look = new THREE.Vector2(-0.3, -0.6); }
+  if (state === 'duerme') { ty = -0.2 + 0.08 * Math.sin(time * 0.6); trx = 0.5; try_ = -0.5; trz = 0.18 * Math.sin(time * 0.3); lidBase = 1; ringSpd = 0.08; brow = -0.03; }
+  if (petting > 0.3 && state === 'calma') { lidBase = Math.max(lidBase, 0.45 * petting); trz += 0.15 * Math.sin(time * 5); }
+
+  // mirada: cursor si se mueve, si no, sacádicos (y a veces "sigue un pájaro")
+  if (!look) {
+    if (mouseActive > 0) look = mouse.clone().multiplyScalar(0.9);
+    else { if (time > nextSaccade) { gaze.set((Math.random() - .5) * 1.4, (Math.random() - .5) * 0.8); nextSaccade = time + 0.6 + Math.random() * 2.5; } look = gaze; }
+  }
+  // parpadeo natural con variación (a veces doble)
+  if (time > nextBlink && state !== 'duerme') { blinkT = 0; nextBlink = time + 2 + Math.random() * 4.5; if (Math.random() < 0.15) nextBlink = time + 0.25; }
+  let blink = 0; if (blinkT >= 0) { blinkT += dt; blink = blinkT < 0.07 ? blinkT / 0.07 : blinkT < 0.16 ? 1 - (blinkT - 0.07) / 0.09 : 0; if (blinkT > 0.16) blinkT = -1; }
+  if (state === 'duerme' && Math.sin(time * 0.35) > 0.97) lidBase = 0.6; // entreabre un ojo de vez en cuando
+
+  if (!drag) { S.x.t = tx; S.y.t = ty; }
+  S.z.t = tz; S.rx.t = trx; S.ry.t = try_; S.rz.t = trz; S.brow.t = brow; S.browTilt.t = browTilt; S.pupil.t = pupil;
+  S.lid.t = Math.max(lidBase, blink); S.eyeX.t = look.x * 0.06; S.eyeY.t = look.y * 0.05; S.mouth.t = mouthT; S.ringSpd.t = ringSpd;
+  S.card.t = cardT; S.think.t = think; S.warm.t = state === 'contento' ? 1 : 0;
+  // estirar y encoger según velocidad vertical (conserva volumen)
+  const stretch = THREE.MathUtils.clamp(S.y.v * 0.05, -0.25, 0.3); S.sy.t = 1 + stretch + (state === 'habla' ? lv * 0.06 : 0); S.sx.t = 1 / Math.sqrt(S.sy.t);
+  if (state === 'error') { S.sy.t *= 0.88; S.sx.t *= 0.96; }
+  const sub = reduced ? 1 : 3;
+  for (let i = 0; i < sub; i++) Object.values(S).forEach((sp) => sp.step(dt / sub));
+
+  char.position.set(S.x.x, S.y.x, S.z.x);
+  body.rotation.set(S.rx.x, S.ry.x, S.rz.x);
+  body.scale.set(S.sx.x, S.sy.x, S.sx.x);
+  for (const e of [eyeL, eyeR]) {
+    e.iris.position.x = S.eyeX.x; e.iris.position.y = S.eyeY.x; e.iris.scale.setScalar(S.pupil.x);
+    const lid = THREE.MathUtils.clamp(S.lid.x, 0, 1);
+    const cutY = 0.2 - lid * 0.4; e.lid.userData.u.cut.value = cutY; e.lid.visible = lid > 0.02;
+    e.lidPivot.position.y = cutY; e.lidPivot.visible = lid > 0.02;
+    e.lidPivot.scale.x = Math.max(0.05, Math.sqrt(Math.max(0, 0.19 * 0.19 - cutY * cutY)) / 0.19); // la línea del párpado sigue la curva del ojo
+    e.brow.position.y = 0.29 + S.brow.x;
+  }
+  eyeL.brow.rotation.z = -S.browTilt.x; eyeR.brow.rotation.z = S.browTilt.x;
+  mouth.scale.set(1 + S.mouth.x * 0.3, Math.max(0.001, S.mouth.x), 1); mouth.visible = S.mouth.x > 0.03;
+  // anillo: gira, se mueve con el "viento" y vibra con la voz
+  ring.rotation.y += S.ringSpd.x * dt; ring.rotation.x = 0.32 + 0.05 * Math.sin(time * 0.8) + lv * 0.08 * Math.sin(time * 40);
+  const bA = time * S.ringSpd.x * 1.3; bead.position.set(Math.cos(bA) * 1.55, 0, Math.sin(bA) * 1.55);
+  ringLine.scale.setScalar(1 + lv * 0.04 * Math.sin(time * 30));
+  // tarjeta que sostiene al pedir tu sí
+  card.scale.setScalar(Math.max(0.001, S.card.x)); card.rotation.z = 0.04 * Math.sin(time * 1.5); card.rotation.x = -0.1;
+  // trazos de construcción que se dibujan en el aire
+  construct.visible = S.think.x > 0.02;
+  cLines.forEach((l, i) => { const prog = THREE.MathUtils.clamp((Math.sin(time * 1.6 + i * 0.7) * 0.5 + 0.5) * S.think.x, 0, 1);
+    l.scale.setScalar(1); l.material.opacity = 0.5 * S.think.x; const c = l.userData.corner, v = l.userData.vp;
+    l.userData.base.forEach((p, k) => p.copy(c).lerp(v, (k / (l.userData.base.length - 1)) * prog)); });
+  // chispas
+  sparks.visible = S.spark.x > 0.02; sparks.position.y = 0.2; sparkList.forEach((l) => { l.position.copy(l.userData.dir).multiplyScalar(0.9 + S.spark.x * 0.6); l.material.opacity = THREE.MathUtils.clamp(S.spark.x, 0, 1); });
+  if (state === 'contento' && stateT > 2.2) setState('calma');
+  // luz cálida que se ilumina con buenas noticias
+  paperU.warm.value.setRGB(1, 0.95 + S.warm.x * 0.03, 0.85 + S.warm.x * 0.05);
+
+  // cámara que "respira" + paralaje con el cursor
+  const px = reduced ? 0 : mouse.x, py = reduced ? 0 : mouse.y;
+  camera.position.x += ((px * 0.35 + Math.sin(time * 0.13) * 0.08) - camera.position.x) * 0.04;
+  camera.position.y += ((py * 0.2 + Math.sin(time * 0.17) * 0.05) - camera.position.y) * 0.04;
+  camera.lookAt(0, 0.1, 0);
+  skyU.par.value.set(camera.position.x * 4, camera.position.y * 4);
+  skyU.time.value = time; paperU.time.value = time;
+
+  // las líneas "hierven" a 8 cuadros por segundo (animación dibujada)
+  boilT += dt; if (boilT > (reduced ? 1e9 : 0.125)) { boilT = 0; boilers.forEach((f) => f()); }
+  renderer.render(scene, camera);
+}
+tick();
+
+// ---------- Modo de prueba ----------
+const box = document.getElementById('states');
+function renderButtons() { box.innerHTML = ''; STATES.forEach((st) => { const b = document.createElement('button'); b.textContent = st; if (st === state) b.className = 'on'; b.onclick = () => setState(st); box.appendChild(b); }); }
+renderButtons();
+document.getElementById('vol').oninput = (e) => { audio.level = +e.target.value; };
+const hour = document.getElementById('hour'); const info = document.getElementById('info');
+const cancun = () => { const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Cancun' })); return d.getHours() + d.getMinutes() / 60; };
+hour.value = cancun().toFixed(1); skyU.hour.value = +hour.value;
+const showHour = () => { const h = +hour.value; info.textContent = `Hora: ${String(Math.floor(h)).padStart(2, '0')}:${String(Math.round((h % 1) * 60)).padStart(2, '0')} (inicia con la hora de Cancún)`; };
+hour.oninput = () => { skyU.hour.value = +hour.value; showHour(); }; showHour();
+window.__setState = setState; window.__setHour = (h) => { hour.value = h; hour.oninput(); };
+</script>
+</body>
+</html>
