@@ -4,7 +4,7 @@
 - **Recordatorios que te avisan:** «Recuérdame mañana a las 9 llamar al proveedor» → a esa hora llega el aviso (una sola vez).
 - **Resumen del día a las 7:30:** «Tu día: tienes 4 compromisos. 3 correos sin leer. Prioridad: …». Se envía una vez al día, entre las 7:30 y el mediodía (si el servidor estuvo apagado toda la mañana, no te llega en la tarde). Tocar el aviso abre el Resumen.
 - **Dos formas de recibir avisos:**
-  - **Notificación del sistema** (con FRIDAY cerrada): actívala en Habilidades y permisos → Avisos → Activar. Mac: Chrome o Safari. **iPhone: primero hay que agregar FRIDAY a la pantalla de inicio** (etapa 7); es una regla de Apple.
+  - **Notificación del sistema** (con FRIDAY cerrada): actívala en Ajustes → Avisos → Activar. Mac: Chrome o Safari. **iPhone: primero hay que agregar FRIDAY a la pantalla de inicio** (etapa 7); es una regla de Apple.
   - **Dentro de la app:** si FRIDAY está abierta, el aviso aparece arriba. Nada se pierde: los avisos quedan guardados hasta que los veas.
 - **Listo para n8n:** con `SCHEDULER=off` el servidor no programa nada y n8n llama `POST /api/hooks/briefing` y `/api/hooks/reminders` con `Authorization: Bearer <HOOKS_SECRET>`. Sin esa clave, los webhooks están cerrados.
 

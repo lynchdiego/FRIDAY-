@@ -20,7 +20,7 @@ export function Compact({ onAsk, onSkills }: { onAsk: (text: string) => void; on
         <span className="brand">FRIDAY</span>
         <div className="row">
           <span className="tag clear hide-touch">⌥ espacio</span>
-          <button className="btn btn-circle clear" aria-label="Habilidades y permisos" onClick={onSkills}><Sliders /></button>
+          <button className="btn btn-circle clear" aria-label="Ajustes" onClick={onSkills}><Sliders /></button>
         </div>
       </header>
       <MobiusView className="compact-mobius" distance={6.6} />

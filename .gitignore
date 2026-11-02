@@ -5,6 +5,7 @@ dist/
 !.env.example
 *.log
 .DS_Store
-data/
+/data/
 apps/server/data/
 *.tsbuildinfo
+backups/

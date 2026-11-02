@@ -16,14 +16,36 @@ import { randomToken } from './security/crypto';
 import { today } from './agent/today';
 import { authUrl, saveConnection, connectionStatus, disconnect, googleConfigured } from './integrations/google';
 
-export async function buildApp(deps: Deps, opts: { push?: PushSender } = {}) {
+export async function buildApp(deps: Deps, opts: { push?: PushSender; webDir?: string } = {}) {
   const { db, config } = deps;
-  const app = Fastify({ logger: config.NODE_ENV !== 'test' ? { level: 'info' } : false, bodyLimit: 256 * 1024 });
+  const app = Fastify({
+    // Los registros nunca incluyen parámetros de la dirección (p. ej. el código de Google) ni cookies.
+    logger: config.NODE_ENV !== 'test' ? { level: 'info', serializers: { req: (r: any) => ({ method: r.method, url: String(r.url).split('?')[0] }) } } : false,
+    bodyLimit: 256 * 1024,
+    trustProxy: config.NODE_ENV === 'production', // detrás de Caddy (HTTPS)
+  });
   await app.register(cookie);
+
+  // Encabezados de seguridad para todas las respuestas.
+  const CSP = [
+    "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src https://fonts.gstatic.com", "img-src 'self' data: blob:", "media-src 'self' blob: data:",
+    "connect-src 'self'", "worker-src 'self'", "manifest-src 'self'", "frame-ancestors 'none'", "base-uri 'self'", "form-action 'self'",
+  ].join('; ');
+  app.addHook('onSend', async (req, reply) => {
+    reply.header('X-Content-Type-Options', 'nosniff');
+    reply.header('Referrer-Policy', 'no-referrer');
+    reply.header('X-Frame-Options', 'DENY');
+    reply.header('Permissions-Policy', 'microphone=(self), camera=(), geolocation=(), payment=()');
+    reply.header('Content-Security-Policy', CSP);
+    if (secure) reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    if (req.url.startsWith('/api/')) reply.header('Cache-Control', 'no-store');
+  });
   const auth = requireAuth(db);
   const secure = config.NODE_ENV === 'production';
 
-  app.get('/api/health', async () => ({ ok: true, llm: deps.llm.name, integraciones: deps.integ.name }));
+  // Pública: en producción no revela qué modelo ni qué integraciones se usan.
+  app.get('/api/health', async () => (secure ? { ok: true } : { ok: true, llm: deps.llm.name, integraciones: deps.integ.name }));
 
   app.post('/api/login', async (req, reply) => {
     const body = z.object({ password: z.string() }).safeParse(req.body);
@@ -76,7 +98,7 @@ export async function buildApp(deps: Deps, opts: { push?: PushSender } = {}) {
   // Regreso desde Google: se valida con el "state" de un solo uso (la cookie estricta no viaja en este salto).
   app.get('/api/google/callback', async (req, reply) => {
     const q = req.query as { code?: string; state?: string; error?: string };
-    const back = (r: string) => reply.redirect(`${config.PUBLIC_URL}/?google=${r}#habilidades`);
+    const back = (r: string) => reply.redirect(`${config.PUBLIC_URL}/?google=${r}#ajustes`);
     if (q.error || !q.code || !q.state) return back('cancelado');
     const r = await db.query<any>('DELETE FROM oauth_states WHERE state=$1 AND expires_at > now() RETURNING user_id', [q.state]);
     if (!r.rows[0]) return back('vencido');
@@ -139,7 +161,10 @@ export async function buildApp(deps: Deps, opts: { push?: PushSender } = {}) {
   // Ajustes y costos
   app.get('/api/settings', { preHandler: auth }, async (req) => {
     const s = await spend(db, req.userId!, config.FRIDAY_TZ);
-    return { model: config.MODEL_DEFAULT, modelHeavy: config.MODEL_HEAVY, llm: deps.llm.name, integraciones: deps.integ.name, voz: voiceEnabled(config) ? 'elevenlabs' : 'navegador', limiteDiarioUsd: config.DAILY_LIMIT_USD, costo: s };
+    const d = await db.query<any>(
+      `SELECT CASE WHEN model LIKE 'elevenlabs:%' THEN 'Voz' ELSE 'Claude' END AS servicio, SUM(cost_usd) AS usd FROM usage_log
+       WHERE user_id=$1 AND date_trunc('month', at AT TIME ZONE $2) = date_trunc('month', now() AT TIME ZONE $2) GROUP BY 1 ORDER BY 1`, [req.userId, config.FRIDAY_TZ]);
+    return { desglose: d.rows.map((r) => ({ servicio: r.servicio, usd: Number(r.usd) })), model: config.MODEL_DEFAULT, modelHeavy: config.MODEL_HEAVY, llm: deps.llm.name, integraciones: deps.integ.name, voz: voiceEnabled(config) ? 'elevenlabs' : 'navegador', limiteDiarioUsd: config.DAILY_LIMIT_USD, costo: s };
   });
   app.get('/api/audit', { preHandler: auth }, async (req) => {
     const r = await db.query('SELECT at, event, tool, action_id, detail FROM audit_log WHERE user_id=$1 ORDER BY id DESC LIMIT 100', [req.userId]);
@@ -155,6 +180,19 @@ export async function buildApp(deps: Deps, opts: { push?: PushSender } = {}) {
     await db.query('DELETE FROM memories WHERE user_id=$1', [req.userId]);
     return { ok: true };
   });
+
+  // Producción: el mismo servidor entrega la app (apps/web/dist). Rutas desconocidas → la app.
+  if (opts.webDir) {
+    const { default: fastifyStatic } = await import('@fastify/static');
+    await app.register(fastifyStatic, {
+      root: opts.webDir, prefix: '/', index: ['index.html'], wildcard: false,
+      setHeaders: (res, path) => {
+        if (path.includes('/assets/')) res.header('Cache-Control', 'public, max-age=31536000, immutable');
+        else res.header('Cache-Control', 'no-cache');
+      },
+    });
+    app.setNotFoundHandler((req, reply) => (req.url.startsWith('/api/') ? reply.code(404).send({ error: 'No existe.' }) : reply.sendFile('index.html')));
+  }
 
   return app;
 }

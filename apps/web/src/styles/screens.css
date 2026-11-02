@@ -186,3 +186,14 @@ textarea.confirm-body { background: rgba(255,255,255,.04); border: 1px solid var
 .never ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .never li { color: var(--text-3); text-decoration: line-through; text-decoration-color: rgba(255,255,255,.35); }
 @media (max-width: 599px) { .skill-list li { align-items: flex-start; } }
+
+/* ---------- Pantalla 6: ajustes ---------- */
+.cost-stats { grid-template-columns: repeat(3, 1fr); }
+.cost-stats dd { font-size: clamp(30px, 6vw, 48px); }
+.meter { height: 2px; background: var(--line); margin: 16px 0 8px; border-radius: 2px; overflow: hidden; }
+.meter span { display: block; height: 100%; background: var(--text); transition: width .6s var(--ease); }
+.settings-link { align-self: flex-start; }
+.settings-actions { margin-top: 10px; flex-wrap: wrap; }
+.settings-confirm { padding: 0 20px; flex: 1; min-width: 180px; max-width: 260px; outline: none; }
+.settings .skill-list li { font-size: 14px; }
+@media (max-width: 599px) { .cost-stats { grid-template-columns: repeat(3, 1fr); gap: 10px; } }

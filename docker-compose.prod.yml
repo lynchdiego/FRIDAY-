@@ -1,0 +1,60 @@
+# FRIDAY en producción: base de datos + FRIDAY + Caddy (HTTPS automático) + respaldos diarios.
+# Uso: docker compose -f docker-compose.prod.yml up -d --build
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: friday
+      POSTGRES_DB: friday
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U friday -d friday"]
+      interval: 5s
+      retries: 20
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://friday:${POSTGRES_PASSWORD}@db:5432/friday
+      PUBLIC_URL: https://${FRIDAY_DOMAIN:?Falta FRIDAY_DOMAIN en .env}
+    depends_on:
+      db: { condition: service_healthy }
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      FRIDAY_DOMAIN: ${FRIDAY_DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on: [app]
+
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes: [./backups:/backups]
+    entrypoint: ["/bin/sh", "-c"]
+    # Un respaldo al día; se conservan 14 días. El primero espera 10 min a que FRIDAY cree sus tablas.
+    command:
+      - |
+        sleep 600
+        while true; do
+          pg_dump -h db -U friday -d friday -Fc -f /backups/friday-$$(date +%F).dump && echo "respaldo $$(date +%F) listo"
+          find /backups -name 'friday-*.dump' -mtime +14 -delete
+          sleep 86400
+        done
+    depends_on:
+      db: { condition: service_healthy }
+
+volumes:
+  pgdata:
+  caddy_data:

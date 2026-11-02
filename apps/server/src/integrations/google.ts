@@ -71,7 +71,7 @@ function emailFromIdToken(idToken?: string | null) {
 export function createGoogleIntegrations(db: Db, c: Config, userId = 1): Integrations {
   async function auth() {
     const r = await db.query<any>('SELECT token_enc FROM google_connections WHERE user_id=$1', [userId]);
-    if (!r.rows[0]) throw new IntegrationError('Google', 'Google no está conectado. Conéctalo en Habilidades y permisos.');
+    if (!r.rows[0]) throw new IntegrationError('Google', 'Google no está conectado. Conéctalo en Ajustes.');
     const client = oauthClient(c);
     const creds: Credentials = JSON.parse(decrypt(r.rows[0].token_enc, c.ENCRYPTION_KEY!));
     client.setCredentials(creds);

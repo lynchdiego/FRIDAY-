@@ -5,6 +5,7 @@ import { z } from 'zod';
 const Env = z.object({
   NODE_ENV: z.string().default('development'),
   PORT: z.coerce.number().default(8787),
+  WEB_DIR: z.string().optional(), // carpeta con la app compilada (producción)
   FRIDAY_PASSWORD: z.string().min(8, 'FRIDAY_PASSWORD debe tener al menos 8 caracteres'),
   ENCRYPTION_KEY: z.string().optional(), // 32 bytes en base64; obligatorio en producción
   DATABASE_URL: z.string().optional(), // si falta, se usa PGlite (Postgres local en archivo)
@@ -46,7 +47,12 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     throw new Error(`Configuración incompleta:\n${msg}`);
   }
   const c = parsed.data;
-  if (c.NODE_ENV === 'production' && !c.ENCRYPTION_KEY) throw new Error('ENCRYPTION_KEY es obligatoria en producción');
+  if (c.NODE_ENV === 'production') {
+    if (!c.ENCRYPTION_KEY) throw new Error('ENCRYPTION_KEY es obligatoria en producción');
+    if (c.FRIDAY_PASSWORD.length < 14) throw new Error('En producción FRIDAY_PASSWORD debe tener al menos 14 caracteres');
+    if (!c.PUBLIC_URL.startsWith('https://')) throw new Error('En producción PUBLIC_URL debe empezar con https://');
+    if (!c.DATABASE_URL) throw new Error('En producción DATABASE_URL es obligatoria (PostgreSQL)');
+  }
   const llmProvider = c.LLM_PROVIDER ?? (c.ANTHROPIC_API_KEY ? 'anthropic' : 'mock');
   if (llmProvider === 'anthropic' && !c.ANTHROPIC_API_KEY) throw new Error('Falta ANTHROPIC_API_KEY');
   if (c.INTEGRATIONS === 'google' && !(c.GOOGLE_CLIENT_ID && c.GOOGLE_CLIENT_SECRET && c.ENCRYPTION_KEY))

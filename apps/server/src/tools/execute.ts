@@ -114,6 +114,10 @@ async function runReadOrPropose(name: ToolName, input: any, ctx: ToolContext): P
       return { content: r.rows.length ? JSON.stringify(r.rows) : 'Sin resultados en memoria.', cards: [] };
     }
     case 'memory_save': {
+      // Defensa contra "memoria envenenada": en un turno que leyó correos o eventos de terceros
+      // no se guarda nada; FRIDAY debe pedirle a Diego que lo confirme con sus palabras.
+      if (ctx.turn.untrustedSeen)
+        return { content: 'ERROR: por seguridad no guardo en memoria durante un turno en el que leí contenido externo. Pide a Diego que te diga directamente qué quiere que recuerdes.', isError: true, cards: [] };
       if (/contrase[nñ]a|password|clabe|tarjeta|cvv|nip\b/i.test(`${input.subject} ${input.content}`))
         return { content: 'ERROR: por seguridad no guardo contraseñas ni datos bancarios.', isError: true, cards: [] };
       await db.query('INSERT INTO memories(user_id, kind, subject, content) VALUES ($1,$2,$3,$4)', [userId, input.kind, input.subject, input.content]);

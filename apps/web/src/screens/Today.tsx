@@ -21,7 +21,7 @@ export function Today({ onAsk, onSkills }: { onAsk: (text: string) => void; onSk
         <button className="btn clear" onClick={() => onAsk('¿Qué pendientes tengo?')}>Pendientes</button>
         <AskField id="ask-today" material="frosted" className="today-search" />
         <span className="btn btn-circle clear hide-touch" title="⌥ + espacio para hablar">⌥</span>
-        <button className="btn btn-circle clear" aria-label="Habilidades y permisos" onClick={onSkills}><Sliders /></button>
+        <button className="btn btn-circle clear" aria-label="Ajustes" onClick={onSkills}><Sliders /></button>
       </nav>
 
       <section className="today-hero">

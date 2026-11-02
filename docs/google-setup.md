@@ -46,13 +46,13 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
 ## 6. Conectar
 1. Reinicia FRIDAY (`npm run dev:server`).
-2. En la app: botón redondo de ajustes (arriba a la derecha) → **Habilidades y permisos** → Google → **Conectar**.
+2. En la app: botón redondo de arriba a la derecha → **Ajustes** → Google → **Conectar**.
 3. Google mostrará **"Google no verificó esta app"** → **Configuración avanzada** → **Ir a FRIDAY**. Es tu propia app; es seguro.
 4. **Marca todas las casillas** de permisos → **Continuar**.
 5. Verás "Google conectado". Pregúntale a FRIDAY: «¿Qué tengo hoy?»
 
 ## Para desconectar
-En **Habilidades y permisos** → **Desconectar** (FRIDAY también revoca el acceso en Google). O desde tu cuenta de Google → Seguridad → Apps con acceso a tu cuenta.
+En **Ajustes** → Google → **Desconectar** (FRIDAY también revoca el acceso en Google). O desde tu cuenta de Google → Seguridad → Apps con acceso a tu cuenta.
 
 ## Qué puede y qué no puede hacer FRIDAY con estos permisos
 - **Calendar:** ver y editar eventos de tus calendarios (no puede cambiar ajustes ni compartir calendarios).

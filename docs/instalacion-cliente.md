@@ -29,12 +29,15 @@
 3. Personalizar `apps/server/prompts/friday.md` (nombre, negocio, tono). No quitar las secciones de seguridad.
 4. Revisar `packages/shared/src/skills.ts`: activar solo las habilidades contratadas.
 
+## 3.5 Publicar
+Seguir `docs/despliegue.md` con el dominio del cliente (p. ej. `friday.cliente.com`). Un servidor por cliente (datos separados). Revisar `docs/revision-seguridad.md` con el cliente.
+
 ## 4. Pruebas antes de entregar
 - `npm test` (todas deben pasar).
 - `npm run test:live` con la llave del cliente (costo: centavos).
 - Prueba manual con el cliente: agenda de hoy, borrador, correo con confirmación, cancelar, recordatorio.
 
 ## 5. Entrega
-- Instalar la app en Mac y iPhone del cliente (PWA, etapa 7).
+- Instalar la app en Mac y iPhone del cliente (ver `docs/manual-de-uso.md` → Instalar) y activar Avisos en cada dispositivo.
 - Entregar el `manual-de-uso.md` personalizado y el `procedimiento-fallas.md`.
 - Programar revisión a los 7 días: costos reales, ajustes de tono, habilidades nuevas.

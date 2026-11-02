@@ -13,7 +13,10 @@ const db = await openDb({ url: config.DATABASE_URL, pgliteDir: config.PGLITE_DIR
 const llm = config.llmProvider === 'anthropic' ? createAnthropicLlm(config.ANTHROPIC_API_KEY!) : createMockLlm({ tz: config.FRIDAY_TZ });
 const integrations = config.INTEGRATIONS === 'google' ? createGoogleIntegrations(db, config) : createMockIntegrations({ tz: config.FRIDAY_TZ }).integrations;
 const deps = { db, llm, integ: integrations, config };
-const app = await buildApp(deps);
+const app = await buildApp(deps, { webDir: config.WEB_DIR });
 startScheduler(deps, webPushSender(db, config), (m) => app.log.warn(m));
 await app.listen({ port: config.PORT, host: '0.0.0.0' });
+const stop = async () => { await app.close(); await db.close(); process.exit(0); };
+process.on('SIGTERM', stop);
+process.on('SIGINT', stop);
 app.log.info(`FRIDAY lista en :${config.PORT} — modelo: ${llm.name}, integraciones: ${integrations.name}`);

@@ -5,8 +5,15 @@
 ## Qué es
 FRIDAY es tu asistente ejecutiva. Lee tu agenda y tu correo, te resume el día, redacta, agenda y te recuerda cosas. **Hace lo repetitivo para que tú hagas lo creativo. Tú decides; FRIDAY ejecuta.**
 
+## Instalar
+- **iPhone:** abre la dirección de FRIDAY en Safari → Compartir → **Agregar a pantalla de inicio**.
+- **Mac:** Chrome → ícono de instalar en la barra de direcciones; o Safari → Archivo → **Agregar al Dock**.
+
 ## Entrar
 Abre la app y escribe tu contraseña. La sesión dura 30 días en ese dispositivo.
+
+## Ajustes (botón redondo arriba a la derecha)
+Lo que llevas gastado hoy y en el mes, conexiones (Google, voz, avisos), lo último que FRIDAY propuso y ejecutó, exportar o borrar su memoria, y **Habilidades y permisos** (qué puede hacer FRIDAY).
 
 ## Hablarle o escribirle
 - **Escribir:** usa el campo «Pregúntame lo que sea» y presiona la flecha.
@@ -41,7 +48,7 @@ FRIDAY no puede enviar desde tu WhatsApp personal (no existe una forma oficial).
 ## Avisos
 - **Recordatorios:** «Recuérdame el jueves a las 5 enviar el corte». Te avisa a esa hora.
 - **Resumen del día:** a las 7:30 te llega tu día en una línea, con la prioridad.
-- Actívalos en **Habilidades y permisos → Avisos → Activar** en cada dispositivo. En iPhone, primero agrega FRIDAY a tu pantalla de inicio.
+- Actívalos en **Ajustes → Avisos → Activar** en cada dispositivo. En iPhone, primero agrega FRIDAY a tu pantalla de inicio.
 
 ## La presencia (la cinta de luz)
 - **En calma:** tenue y lenta.
@@ -50,4 +57,4 @@ FRIDAY no puede enviar desde tu WhatsApp personal (no existe una forma oficial).
 - **Hablando:** pulsa con la voz de FRIDAY.
 
 ## Costos
-FRIDAY registra lo que gasta en Claude por día y por mes (pantalla de Ajustes, etapa 7). Si llega al límite diario (US$2), pasa a modo básico hasta el día siguiente: sigues viendo agenda y pendientes, pero no conversa.
+FRIDAY registra lo que gasta en Claude y en voz, por día y por mes (Ajustes). Si llega al límite diario (US$2), pasa a modo básico hasta el día siguiente: sigues viendo agenda y pendientes, pero no conversa.

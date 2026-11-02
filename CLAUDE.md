@@ -8,8 +8,10 @@ Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NO
 3. Cerebro por texto — **aprobado** (2026-11-01). Falta la prueba corta con Claude real (`npm run test:live`) cuando Diego tenga su llave.
 4. Google (Calendar, Gmail, **Tasks**) + resumen del día + pantalla 5 — **aprobado** (2026-11-02). Google real listo pero sin conectar (guía: `docs/google-setup.md`).
 5. Voz — **aprobado** (2026-11-02). ElevenLabs listo pero sin llave (hoy: voz del navegador).
-6. Recordatorios y resumen 7:30 — **hecho** (`docs/etapa-6.md`); Diego autorizó continuar con 6 y 7 seguidas. 34 pruebas.
-7. Pulido y despliegue — en curso.
+6. Recordatorios y resumen 7:30 — **hecho** (`docs/etapa-6.md`); Diego autorizó continuar con 6 y 7 seguidas.
+7. Pulido y despliegue — **hecho, pendiente de revisión de Diego** (`docs/etapa-7.md`). 39 pruebas + prueba real con Docker (HTTPS, login, chat, respaldo y restauración).
+
+**Siguiente paso real:** Diego agrega `ANTHROPIC_API_KEY` como secreto del entorno → sesión nueva → `npm run test:live` y ajustar `prompts/friday.md` con los resultados. Luego publicar (`docs/despliegue.md`, necesita dominio y servidor) y conectar Google y ElevenLabs en producción.
 
 Plan acordado de llaves (2026-11-02): Claude primero (Diego agregará `ANTHROPIC_API_KEY` como secreto del entorno en la nube; en una sesión nueva correr `npm run test:live`); Google y ElevenLabs se conectan con FRIDAY ya publicada (etapa 7). Desde el servidor de desarrollo api.anthropic.com sí responde; elevenlabs.io y developers.google.com están bloqueados.
 
@@ -42,6 +44,12 @@ Plan acordado de llaves (2026-11-02): Claude primero (Diego agregará `ANTHROPIC
 - Diagnóstico solo en desarrollo: `window.__friday` (`presence`, `liveLevel`).
 - **Avisos**: `apps/server/src/notify.ts` (tabla `notifications` + Web Push con `web-push`; llaves VAPID generadas una vez en `settings` key `vapid`, privada cifrada; suscripciones 404/410 se borran) y `scheduler.ts` (`runReminders`, `runBriefing` con marca atómica `resumen_enviado:FECHA`, ventana BRIEFING_TIME–12:00; `SCHEDULER=internal|off`; webhooks `/api/hooks/*` con `HOOKS_SECRET`). Web: `public/sw.js` (push + clic), `state/notices.ts` (activar push, avisos en la app cada minuto).
 - Zona horaria en la web: `state/tz.ts` (la fija `chat` desde `/api/me`); saludo, fecha y hora la usan.
+- Pantalla 6 Ajustes: `screens/Settings.tsx` (costos con desglose Claude/Voz de `/api/settings`, conexiones, voz, avisos, actividad de `/api/audit`, exportar/borrar memoria, cerrar sesión). El botón redondo abre Ajustes; Ajustes → Habilidades y permisos.
+- PWA: `public/manifest.webmanifest`, íconos generados de la Möbius (`public/icon-*.png`, `apple-touch-icon.png`), `sw.js` con caché de la "cáscara" (nunca `/api/*`) y página sin conexión.
+- Producción: `Dockerfile` (un contenedor: servidor sirve `apps/web/dist` vía `WEB_DIR` con `@fastify/static`), `docker-compose.prod.yml` (postgres 17, app, caddy HTTPS automático, backup diario 14 días que espera 10 min al arrancar), `deploy/Caddyfile`. En producción `loadConfig` exige ENCRYPTION_KEY, DATABASE_URL, PUBLIC_URL https y contraseña ≥14. Encabezados de seguridad (CSP, HSTS, etc.) en `app.ts`; logs sin query string; `/api/health` sin detalles en producción.
+- Memoria: `memory_save` bloqueado en turnos con contenido externo (memoria envenenada); la memoria va en `<memoria>` marcada como datos.
+- Ojo `.gitignore`/`.dockerignore`: usar `/data/` (raíz), nunca `data/` a secas: excluía `apps/web/src/data`.
+- Para probar Docker aquí: Docker Hub da 429 → usar `mirror.gcr.io/library/<imagen>` y reetiquetar; build con `--network host` y el CA del proxy (variante de Dockerfile en el scratchpad, no en el repo).
 
 ## Cómo correr
 - Pruebas: `npm test` (simulado, gratis) · `npm run test:live` (Claude real, requiere `ANTHROPIC_API_KEY`, centavos).
@@ -56,5 +64,7 @@ Plan acordado de llaves (2026-11-02): Claude primero (Diego agregará `ANTHROPIC
 - Prueba con Claude real (Diego crea cuenta en platform.claude.com, US$10 de saldo, límite mensual ~US$20).
 - Conectar el Google real de Diego (`docs/google-setup.md`) — al final, según el plan de llaves.
 - Conectar ElevenLabs (voz original con Voice Design) al final; verificar precios y nombres de modelo en elevenlabs.io (bloqueado desde el servidor de desarrollo).
+- Elegir servidor (precios de Hetzner cambiaron 2 veces en 2026; línea CX no está en EE. UU.) y dominio.
+- Riesgos aceptados y mejoras para NODO: `docs/revision-seguridad.md`.
 - Ajustar la ganancia del medidor de micrófono (`startMeter(an, 7)`) con la voz real de Diego.
 - Resumir historial por día (`summaries`) cuando las conversaciones crezcan.

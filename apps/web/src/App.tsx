@@ -4,6 +4,7 @@ import { Today } from './screens/Today';
 import { Chat } from './screens/Chat';
 import { Login } from './screens/Login';
 import { Skills } from './screens/Skills';
+import { Settings } from './screens/Settings';
 import { ConfirmSheet } from './components/ConfirmSheet';
 import { Simulator } from './components/Simulator';
 import { useTalkShortcut } from './components/Controls';
@@ -11,7 +12,7 @@ import { chat, useChat, type ActionCard } from './state/chat';
 import { mock } from './data/mock';
 import { useInAppNotices } from './state/notices';
 
-const VIEWS = ['inicio', 'hoy', 'conversacion', 'habilidades'];
+const VIEWS = ['inicio', 'hoy', 'conversacion', 'habilidades', 'ajustes'];
 const initial = () => { const h = location.hash.slice(1); return VIEWS.includes(h) ? h : innerWidth > 900 ? 'hoy' : 'inicio'; };
 
 // Tarjeta de ejemplo para revisar el diseño de la confirmación desde el simulador.
@@ -33,7 +34,7 @@ export function App() {
     if (g) {
       const msg: Record<string, string> = { ok: 'Google conectado.', cancelado: 'Conexión con Google cancelada.', vencido: 'La conexión tardó demasiado. Intenta de nuevo.', error: 'No se pudo conectar Google. Revisa que marcaste todos los permisos.' };
       chat.notify(msg[g] ?? 'Listo.');
-      history.replaceState(null, '', location.pathname + location.hash);
+      history.replaceState(null, '', location.pathname + (location.hash === '#habilidades' ? '#ajustes' : location.hash));
     }
   }, []);
   useEffect(() => {
@@ -46,6 +47,7 @@ export function App() {
   const ask = (text: string) => { setView('conversacion'); chat.send(text); };
   const home = () => setView(innerWidth > 900 ? 'hoy' : 'inicio');
   const skills = () => setView('habilidades');
+  const settings = () => setView('ajustes');
 
   if (mode === 'checking') return null;
   if (mode === 'server' && !authed) return <Login />;
@@ -53,9 +55,10 @@ export function App() {
   return (
     <>
       {view === 'conversacion' ? <Chat onBack={home} />
-        : view === 'habilidades' ? <Skills onBack={home} />
-        : view === 'hoy' ? <Today onAsk={ask} onSkills={skills} />
-        : <div className="compact-stage"><Compact onAsk={ask} onSkills={skills} /></div>}
+        : view === 'habilidades' ? <Skills onBack={settings} />
+        : view === 'ajustes' ? <Settings onBack={home} onSkills={skills} />
+        : view === 'hoy' ? <Today onAsk={ask} onSkills={settings} />
+        : <div className="compact-stage"><Compact onAsk={ask} onSkills={settings} /></div>}
       {action && <ConfirmSheet key={action.id + action.token} action={action} />}
       {toast && <div className="toast blur" role="status">{toast}</div>}
       <Simulator view={view} setView={setView} onConfirm={() => chat.openAction(demoAction)} />
