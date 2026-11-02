@@ -38,6 +38,11 @@ Pagar o mover dinero, borrar sin papelera, publicar en tu nombre, compartir llav
 ## WhatsApp
 FRIDAY no puede enviar desde tu WhatsApp personal (no existe una forma oficial). Te deja el mensaje listo: tocas «Abrir en WhatsApp» y solo presionas enviar.
 
+## Avisos
+- **Recordatorios:** «Recuérdame el jueves a las 5 enviar el corte». Te avisa a esa hora.
+- **Resumen del día:** a las 7:30 te llega tu día en una línea, con la prioridad.
+- Actívalos en **Habilidades y permisos → Avisos → Activar** en cada dispositivo. En iPhone, primero agrega FRIDAY a tu pantalla de inicio.
+
 ## La presencia (la cinta de luz)
 - **En calma:** tenue y lenta.
 - **Te escucha:** crece y se ondula con tu voz.

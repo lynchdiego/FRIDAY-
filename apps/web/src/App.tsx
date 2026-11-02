@@ -9,6 +9,7 @@ import { Simulator } from './components/Simulator';
 import { useTalkShortcut } from './components/Controls';
 import { chat, useChat, type ActionCard } from './state/chat';
 import { mock } from './data/mock';
+import { useInAppNotices } from './state/notices';
 
 const VIEWS = ['inicio', 'hoy', 'conversacion', 'habilidades'];
 const initial = () => { const h = location.hash.slice(1); return VIEWS.includes(h) ? h : innerWidth > 900 ? 'hoy' : 'inicio'; };
@@ -24,6 +25,7 @@ export function App() {
   const [view, setViewState] = useState(initial);
   const { mode, authed, action, toast } = useChat();
   useTalkShortcut();
+  useInAppNotices();
   useEffect(() => {
     chat.init();
     // Regreso de la conexión con Google: ?google=ok|cancelado|vencido|error

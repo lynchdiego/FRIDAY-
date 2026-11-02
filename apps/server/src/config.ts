@@ -21,6 +21,11 @@ const Env = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   PUBLIC_URL: z.string().default('http://localhost:5173'), // dirección desde la que Diego abre la app
+  // Tareas programadas: 'internal' (programador del servidor) | 'off' (las dispara n8n por webhook)
+  SCHEDULER: z.enum(['internal', 'off']).default('internal'),
+  BRIEFING_TIME: z.string().regex(/^\d{2}:\d{2}$/).default('07:30'),
+  HOOKS_SECRET: z.string().min(24).optional(), // para que n8n llame /api/hooks/* (Authorization: Bearer ...)
+  VAPID_SUBJECT: z.string().default('mailto:friday@localhost'),
   // Voz (ElevenLabs). Sin llave, la app usa la voz del navegador (gratis).
   ELEVENLABS_API_KEY: z.string().optional(),
   ELEVENLABS_VOICE_ID: z.string().optional(), // voz original creada con Voice Design (sin clonar a nadie)

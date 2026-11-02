@@ -7,8 +7,11 @@ Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NO
 2. Interfaz y Möbius — **aprobado** (2026-11-01). Ajustes posteriores: estados más distintos; Inicio responsivo para iPhone.
 3. Cerebro por texto — **aprobado** (2026-11-01). Falta la prueba corta con Claude real (`npm run test:live`) cuando Diego tenga su llave.
 4. Google (Calendar, Gmail, **Tasks**) + resumen del día + pantalla 5 — **aprobado** (2026-11-02). Google real listo pero sin conectar (guía: `docs/google-setup.md`).
-5. Voz — **hecho, pendiente de aprobación** (`docs/etapa-5.md`). 28 pruebas pasan. ElevenLabs listo pero sin llave (hoy: voz del navegador).
-6–7. Sin empezar.
+5. Voz — **aprobado** (2026-11-02). ElevenLabs listo pero sin llave (hoy: voz del navegador).
+6. Recordatorios y resumen 7:30 — **hecho** (`docs/etapa-6.md`); Diego autorizó continuar con 6 y 7 seguidas. 34 pruebas.
+7. Pulido y despliegue — en curso.
+
+Plan acordado de llaves (2026-11-02): Claude primero (Diego agregará `ANTHROPIC_API_KEY` como secreto del entorno en la nube; en una sesión nueva correr `npm run test:live`); Google y ElevenLabs se conectan con FRIDAY ya publicada (etapa 7). Desde el servidor de desarrollo api.anthropic.com sí responde; elevenlabs.io y developers.google.com están bloqueados.
 
 ## Acuerdos con Diego (2026-11-01)
 - Google: app "En producción sin verificar" (evita caducidad de 7 días de Testing). Verificación formal después, para NODO.
@@ -37,6 +40,8 @@ Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NO
 - **Voz**: servidor `apps/server/src/voice.ts` (proxy ElevenLabs: `POST /api/voice/tts` → enlace de un solo uso `GET /api/voice/tts/:id` que transmite el audio por partes; `POST /api/voice/stt` audio crudo → Scribe; costos en `usage_log` con modelo `elevenlabs:*`; `ELEVENLABS_BASE_URL` configurable). Web `apps/web/src/voice/voice.ts` (micrófono → AnalyserNode → `liveLevel`; MediaRecorder si STT=elevenlabs, si no `SpeechRecognition` es-MX; reproductor único conectado a analizador; `speechSynthesis` de respaldo) y `voice/ptt.ts` (mantener para hablar). Responde con voz solo si el canal fue voz. Silencio en localStorage `friday.voz`.
 - iPhone: el audio se "desbloquea" UNA vez con un WAV silencioso durante un toque (`unlockAudio`); repetirlo pausaba la voz de FRIDAY (bug corregido).
 - Diagnóstico solo en desarrollo: `window.__friday` (`presence`, `liveLevel`).
+- **Avisos**: `apps/server/src/notify.ts` (tabla `notifications` + Web Push con `web-push`; llaves VAPID generadas una vez en `settings` key `vapid`, privada cifrada; suscripciones 404/410 se borran) y `scheduler.ts` (`runReminders`, `runBriefing` con marca atómica `resumen_enviado:FECHA`, ventana BRIEFING_TIME–12:00; `SCHEDULER=internal|off`; webhooks `/api/hooks/*` con `HOOKS_SECRET`). Web: `public/sw.js` (push + clic), `state/notices.ts` (activar push, avisos en la app cada minuto).
+- Zona horaria en la web: `state/tz.ts` (la fija `chat` desde `/api/me`); saludo, fecha y hora la usan.
 
 ## Cómo correr
 - Pruebas: `npm test` (simulado, gratis) · `npm run test:live` (Claude real, requiere `ANTHROPIC_API_KEY`, centavos).
@@ -52,5 +57,4 @@ Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NO
 - Conectar el Google real de Diego (`docs/google-setup.md`) — al final, según el plan de llaves.
 - Conectar ElevenLabs (voz original con Voice Design) al final; verificar precios y nombres de modelo en elevenlabs.io (bloqueado desde el servidor de desarrollo).
 - Ajustar la ganancia del medidor de micrófono (`startMeter(an, 7)`) con la voz real de Diego.
-- Etapa 6: recordatorios y resumen programado de las 7:30 con notificaciones.
 - Resumir historial por día (`summaries`) cuando las conversaciones crezcan.

@@ -3,6 +3,7 @@ import type { Card, ChatReply } from '@friday/shared';
 import { presence } from '../mobius/presence';
 import { mock } from '../data/mock';
 import { speak, voice } from '../voice/voice';
+import { setTz } from './tz';
 
 /**
  * Estado de la conversación y conexión con el servidor de FRIDAY.
@@ -25,7 +26,7 @@ interface State {
 let s: State = { mode: 'checking', authed: false, messages: [], busy: false, tz: 'America/Cancun' };
 export const currentTz = () => s.tz;
 const subs = new Set<() => void>();
-const set = (p: Partial<State>) => { s = { ...s, ...p }; subs.forEach((f) => f()); };
+const set = (p: Partial<State>) => { if (p.tz) setTz(p.tz); s = { ...s, ...p }; subs.forEach((f) => f()); };
 export const useChat = () => useSyncExternalStore((f) => { subs.add(f); return () => { subs.delete(f); }; }, () => s);
 
 async function api<T>(path: string, body?: unknown): Promise<T> {

@@ -18,12 +18,17 @@ export async function harness(opts: { naive?: boolean; env?: Record<string, stri
   const llm: Llm = { name: base.name, create: (r) => { calls++; return base.create(r); } };
   const { integrations, state } = createMockIntegrations({ tz: config.FRIDAY_TZ });
   const deps = { db, llm, integ: integrations, config };
-  const app = await buildApp(deps);
+  const pushed: { endpoint: string; payload: any }[] = [];
+  const push = { send: async (sub: { endpoint: string }, payload: string) => {
+    if (sub.endpoint.includes('vencido')) throw Object.assign(new Error('gone'), { statusCode: 410 });
+    pushed.push({ endpoint: sub.endpoint, payload: JSON.parse(payload) });
+  } };
+  const app = await buildApp(deps, { push });
   const say = (text: string, conversationId?: string) => runTurn(deps, { userId: 1, text, conversationId });
   const login = async () => {
     const r = await app.inject({ method: 'POST', url: '/api/login', payload: { password: 'prueba-segura-123' } });
     return String(r.headers['set-cookie']).split(';')[0];
   };
   const audit = async () => (await db.query<any>('SELECT event, tool, detail FROM audit_log ORDER BY id')).rows;
-  return { config, db, deps, app, state, say, login, audit, llmCalls: () => calls, close: async () => { await app.close(); await db.close(); } };
+  return { config, db, deps, app, state, push, pushed, say, login, audit, llmCalls: () => calls, close: async () => { await app.close(); await db.close(); } };
 }

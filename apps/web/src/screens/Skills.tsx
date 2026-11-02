@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SKILLS, NEVER_RULES, GROUP_LABEL, PERMISSION_LABEL, type Skill, type SkillGroup } from '@friday/shared';
-import { useChat } from '../state/chat';
+import { chat, useChat } from '../state/chat';
+import { usePushStatus, enablePush, disablePush, testPush, PUSH_LABEL } from '../state/notices';
 
 /**
  * Pantalla 5: Habilidades y permisos. Se dibuja desde la misma lista que usa el servidor
@@ -13,7 +14,12 @@ export function Skills({ onBack }: { onBack: () => void }) {
   const [skills, setSkills] = useState<Skill[]>(SKILLS);
   const [never, setNever] = useState<string[]>(NEVER_RULES);
   const [google, setGoogle] = useState<GoogleStatus | null>(null);
-  const [llm, setLlm] = useState<{ model: string; llm: string } | null>(null);
+  const [llm, setLlm] = useState<{ model: string; llm: string; voz?: string } | null>(null);
+  const [push, setPush] = usePushStatus();
+  const activate = async () => {
+    try { const st = await enablePush(); setPush(st); if (st === 'activo') { await testPush(); chat.notify('Avisos activados. Te mandé uno de prueba.'); } }
+    catch { chat.notify('No pude activar los avisos en este dispositivo.'); }
+  };
 
   const load = () => {
     if (mode !== 'server') return;
@@ -45,7 +51,12 @@ export function Skills({ onBack }: { onBack: () => void }) {
           <div><p>Claude</p><p className="label">{mode !== 'server' ? 'Demostración' : llm ? (llm.llm === 'mock' ? 'Simulado (sin llave todavía)' : llm.model) : '…'}</p></div>
         </div>
         <div className="conn-row">
-          <div><p>Voz</p><p className="label">Llega en la etapa 5</p></div>
+          <div><p>Voz</p><p className="label">{mode !== 'server' ? 'Voz del navegador' : llm?.voz === 'elevenlabs' ? 'ElevenLabs · voz original' : 'Voz del navegador (sin ElevenLabs todavía)'}</p></div>
+        </div>
+        <div className="conn-row">
+          <div><p>Avisos</p><p className="label">{push ? PUSH_LABEL[push] : '…'} · Recordatorios y resumen de las 7:30</p></div>
+          {mode === 'server' && push === 'apagado' && <button className="btn btn-primary" onClick={activate}>Activar</button>}
+          {mode === 'server' && push === 'activo' && <button className="btn clear" onClick={async () => setPush(await disablePush())}>Desactivar</button>}
         </div>
       </section>
 

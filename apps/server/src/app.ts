@@ -8,12 +8,15 @@ import { confirmAction, cancelAction } from './agent/actions';
 import { spend } from './agent/usage';
 import { audit } from './agent/audit';
 import { registerVoice, voiceEnabled } from './voice';
+import { vapidKeys, webPushSender, type PushSender } from './notify';
+import { runReminders, runBriefing } from './scheduler';
+import { safeEqual } from './security/crypto';
 import { login, logout, requireAuth, SESSION_COOKIE } from './security/auth';
 import { randomToken } from './security/crypto';
 import { today } from './agent/today';
 import { authUrl, saveConnection, connectionStatus, disconnect, googleConfigured } from './integrations/google';
 
-export async function buildApp(deps: Deps) {
+export async function buildApp(deps: Deps, opts: { push?: PushSender } = {}) {
   const { db, config } = deps;
   const app = Fastify({ logger: config.NODE_ENV !== 'test' ? { level: 'info' } : false, bodyLimit: 256 * 1024 });
   await app.register(cookie);
@@ -93,6 +96,42 @@ export async function buildApp(deps: Deps) {
   });
 
   registerVoice(app, deps, auth);
+
+  // Avisos y notificaciones push
+  const push = opts.push ?? webPushSender(db, config);
+  app.get('/api/notifications', { preHandler: auth }, async (req) =>
+    (await db.query('SELECT id, kind, title, body, url, created_at FROM notifications WHERE user_id=$1 AND read_at IS NULL ORDER BY id DESC LIMIT 20', [req.userId])).rows);
+  app.post('/api/notifications/read', { preHandler: auth }, async (req) => {
+    const body = z.object({ ids: z.array(z.number().int()).max(100) }).safeParse(req.body);
+    if (body.success) await db.query('UPDATE notifications SET read_at=now() WHERE user_id=$1 AND id = ANY($2::int[])', [req.userId, body.data.ids]);
+    return { ok: true };
+  });
+  app.get('/api/push/key', { preHandler: auth }, async () => ({ publicKey: (await vapidKeys(db, config)).publicKey }));
+  app.post('/api/push/subscribe', { preHandler: auth }, async (req, reply) => {
+    const body = z.object({ endpoint: z.string().url().startsWith('https://'), keys: z.object({ p256dh: z.string(), auth: z.string() }), device: z.string().max(80).optional() }).safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: 'Suscripción inválida.' });
+    await db.query(`INSERT INTO push_subscriptions(endpoint, user_id, keys, device) VALUES ($1,$2,$3,$4) ON CONFLICT (endpoint) DO UPDATE SET keys=$3, device=$4`,
+      [body.data.endpoint, req.userId, JSON.stringify(body.data.keys), body.data.device ?? null]);
+    return { ok: true };
+  });
+  app.post('/api/push/unsubscribe', { preHandler: auth }, async (req) => {
+    const body = z.object({ endpoint: z.string() }).safeParse(req.body);
+    if (body.success) await db.query('DELETE FROM push_subscriptions WHERE endpoint=$1 AND user_id=$2', [body.data.endpoint, req.userId]);
+    return { ok: true };
+  });
+  app.post('/api/push/test', { preHandler: auth }, async (req) => {
+    const { notify } = await import('./notify');
+    const n = await notify(db, push, req.userId!, { kind: 'aviso', title: 'FRIDAY', body: 'Así se verán mis avisos.', url: '/#inicio' });
+    return { ok: true, dispositivos: n };
+  });
+
+  // Webhooks para n8n (o cualquier programador externo). Requieren HOOKS_SECRET.
+  const hookAuth = async (req: any, reply: any) => {
+    const token = String(req.headers.authorization ?? '').replace(/^Bearer\s+/i, '');
+    if (!config.HOOKS_SECRET || !token || !safeEqual(token, config.HOOKS_SECRET)) return reply.code(401).send({ error: 'No autorizado.' });
+  };
+  app.post('/api/hooks/reminders', { preHandler: hookAuth }, async () => ({ enviados: await runReminders(deps, push) }));
+  app.post('/api/hooks/briefing', { preHandler: hookAuth }, async () => ({ enviado: await runBriefing(deps, push, 1, { force: true }) }));
 
   // Habilidades y permisos (fuente única de verdad)
   app.get('/api/skills', { preHandler: auth }, async () => ({ skills: SKILLS.map(({ description, ...s }) => ({ ...s, description })), never: NEVER_RULES, groups: GROUP_LABEL, permissions: PERMISSION_LABEL }));

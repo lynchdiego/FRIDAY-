@@ -26,19 +26,21 @@ export const mock = {
   },
 };
 
+import { getTz } from '../state/tz';
+
 export function greeting(d = new Date()) {
-  const h = d.getHours();
+  const h = Number(d.toLocaleString('en-US', { timeZone: getTz(), hour: '2-digit', hour12: false })) % 24;
   return h >= 5 && h < 12 ? 'Buenos días' : h >= 12 && h < 19 ? 'Buenas tardes' : 'Buenas noches';
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export function shortDay(d = new Date()) {
-  const wd = cap(d.toLocaleDateString('es-MX', { weekday: 'short' }).replace('.', ''));
-  return { wd, dd: String(d.getDate()).padStart(2, '0') };
+  const wd = cap(d.toLocaleDateString('es-MX', { timeZone: getTz(), weekday: 'short' }).replace('.', ''));
+  return { wd, dd: d.toLocaleDateString('es-MX', { timeZone: getTz(), day: '2-digit' }) };
 }
 export function longDate(d = new Date()) {
-  return cap(d.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }));
+  return cap(d.toLocaleDateString('es-MX', { timeZone: getTz(), weekday: 'long', day: 'numeric', month: 'long' }));
 }
 export function clock(d = new Date()) {
-  return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: false });
+  return d.toLocaleTimeString('es-MX', { timeZone: getTz(), hour: '2-digit', minute: '2-digit', hour12: false });
 }
