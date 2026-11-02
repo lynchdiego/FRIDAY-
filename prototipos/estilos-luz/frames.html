@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<style>
+@font-face { font-family: 'Barlow Condensed'; font-weight: 300; src: url(node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-300-normal.woff2); }
+@font-face { font-family: 'Barlow Condensed'; font-weight: 500; src: url(node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-500-normal.woff2); }
+@font-face { font-family: 'IBM Plex Mono'; font-weight: 400; src: url(node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2); }
+@font-face { font-family: 'Inter Tight'; font-weight: 300; src: url(node_modules/@fontsource/inter-tight/files/inter-tight-latin-300-normal.woff2); }
+@font-face { font-family: 'Inter Tight'; font-weight: 400; src: url(node_modules/@fontsource/inter-tight/files/inter-tight-latin-400-normal.woff2); }
+@font-face { font-family: 'Inter Tight'; font-weight: 500; src: url(node_modules/@fontsource/inter-tight/files/inter-tight-latin-500-normal.woff2); }
+@font-face { font-family: 'Sora'; font-weight: 300; src: url(node_modules/@fontsource/sora/files/sora-latin-300-normal.woff2); }
+@font-face { font-family: 'Sora'; font-weight: 500; src: url(node_modules/@fontsource/sora/files/sora-latin-500-normal.woff2); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 400; src: url(node_modules/@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2); }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--text); font-family: var(--body); }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ui { position: absolute; inset: 0; padding: 34px 44px; display: grid; }
+.top { position: absolute; top: 34px; left: 44px; right: 44px; display: flex; justify-content: space-between; align-items: center; font-family: var(--label); font-size: 12px; letter-spacing: .32em; color: var(--dim); text-transform: uppercase; }
+.top .brand { color: var(--text); letter-spacing: .5em; }
+.greet { position: absolute; left: 44px; top: 96px; max-width: 520px; }
+.greet h1 { font-family: var(--display); font-weight: var(--dw); font-size: var(--gsize); letter-spacing: var(--gls); line-height: .98; color: var(--text); text-transform: var(--gcase); }
+.greet .sub { margin-top: 14px; font-family: var(--label); font-size: 13px; letter-spacing: .14em; color: var(--dim); text-transform: uppercase; }
+.greet .prio { margin-top: 26px; font-size: 16px; color: var(--text); max-width: 380px; line-height: 1.45; }
+.greet .prio b { display: block; font-family: var(--label); font-weight: 400; font-size: 11px; letter-spacing: .24em; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; }
+.panel { position: absolute; right: 44px; width: 340px; padding: 18px 20px; font-size: 14px; }
+.panel h3 { font-family: var(--label); font-weight: 400; font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: var(--dim); margin-bottom: 12px; display: flex; justify-content: space-between; }
+.row { display: grid; grid-template-columns: 54px 1fr; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+.row:first-of-type { border-top: 0; }
+.row .t { font-family: var(--label); color: var(--light); font-size: 13px; }
+.row .m { color: var(--dim); font-size: 12px; margin-top: 2px; }
+.pill { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px; font-family: var(--label); font-size: 13px; letter-spacing: .2em; text-transform: uppercase; color: var(--text); }
+.pill svg { stroke: var(--light); }
+.pill .sep { width: 1px; height: 22px; background: var(--line); }
+.confirm { position: absolute; padding: 22px 22px 20px; width: 340px; }
+.confirm .tag { font-family: var(--label); font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: var(--warn); }
+.confirm h2 { font-family: var(--display); font-weight: var(--dw); font-size: 30px; letter-spacing: var(--gls2); margin: 8px 0 14px; color: var(--text); text-transform: var(--gcase); }
+.confirm .f { display: grid; grid-template-columns: 70px 1fr; padding: 8px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.confirm .f span:first-child { color: var(--dim); font-family: var(--label); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; padding-top: 2px; }
+.confirm .btns { display: flex; gap: 8px; margin-top: 16px; }
+.confirm .btns span { height: 40px; display: grid; place-items: center; padding: 0 16px; font-family: var(--label); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; }
+.confirm .btns .yes { background: var(--warn); color: var(--bg); }
+.confirm .btns .no { border: 1px solid var(--line); color: var(--text); }
+
+/* ---------- A · Cian táctico ---------- */
+.vA { --bg: #02070c; --text: #dff7ff; --dim: #6a93a3; --light: #7fe7ff; --accent: #7fe7ff; --warn: #ffb547; --line: rgba(127,231,255,.18);
+  --display: 'Barlow Condensed', sans-serif; --dw: 300; --label: 'IBM Plex Mono', monospace; --body: 'IBM Plex Mono', monospace; --gsize: 76px; --gls: .02em; --gls2: .02em; --gcase: uppercase; }
+.vA .panel, .vA .confirm, .vA .pill { background: rgba(10,40,55,.28); border: 1px solid rgba(127,231,255,.32); backdrop-filter: blur(6px);
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px)); }
+.vA .panel { font-size: 13px; }
+.vA .pill { clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px); }
+.vA .confirm { border-color: rgba(255,181,71,.55); background: rgba(60,35,5,.3); }
+/* ---------- B · Luz blanca ---------- */
+.vB { --bg: #070707; --text: #f3efe7; --dim: #8f8a80; --light: #f3efe7; --accent: #e9a640; --warn: #e9a640; --line: rgba(243,239,231,.12);
+  --display: 'Inter Tight', sans-serif; --dw: 300; --label: 'Inter Tight', sans-serif; --body: 'Inter Tight', sans-serif; --gsize: 84px; --gls: -.055em; --gls2: -.04em; --gcase: none; }
+.vB .top, .vB .greet .sub, .vB .panel h3, .vB .pill, .vB .confirm .tag, .vB .confirm .btns span, .vB .confirm .f span:first-child { letter-spacing: .02em; text-transform: none; font-size: 13px; }
+.vB .top .brand { letter-spacing: .5em; text-transform: uppercase; font-size: 12px; }
+.vB .panel { background: transparent; border-top: 1px solid var(--line); padding: 16px 0 0; }
+.vB .pill { border-radius: 999px; background: rgba(243,239,231,.06); border: 1px solid rgba(243,239,231,.16); backdrop-filter: blur(20px); }
+.vB .confirm { background: rgba(18,16,13,.7); border: 1px solid rgba(233,166,64,.35); border-radius: 26px; backdrop-filter: blur(30px); }
+.vB .confirm .btns span { border-radius: 999px; }
+/* ---------- C · Prisma holográfico ---------- */
+.vC { --bg: #04050d; --text: #f1f3ff; --dim: #8b90b3; --light: #e8ecff; --accent: #a9c1ff; --warn: #ffbf6a; --line: rgba(220,226,255,.14);
+  --display: 'Sora', sans-serif; --dw: 300; --label: 'JetBrains Mono', monospace; --body: 'Sora', sans-serif; --gsize: 68px; --gls: -.03em; --gls2: -.02em; --gcase: none; }
+.vC .panel, .vC .confirm, .vC .pill { background: linear-gradient(160deg, rgba(255,255,255,.10), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 30px 60px rgba(0,0,0,.45); backdrop-filter: blur(26px) saturate(140%); border-radius: 22px; }
+.vC .pill { border-radius: 999px; }
+.vC .confirm { border-color: rgba(255,191,106,.4); }
+.vC .confirm .btns span { border-radius: 999px; }
+/* ---------- iPhone ---------- */
+.phone .ui { padding: 54px 22px 30px; }
+.phone .top { top: 54px; left: 22px; right: 22px; }
+.phone .greet { left: 22px; right: 22px; top: 96px; }
+.phone .greet h1 { font-size: calc(var(--gsize) * .55); }
+.phone .greet .prio { display: none; }
+.phone .panel { right: 16px; left: 16px; width: auto; bottom: 120px; }
+.phone .pill { bottom: 34px; }
+.phone .confirm { left: 16px; right: 16px; width: auto; bottom: 110px; }
+</style></head>
+<body>
+<canvas id="c"></canvas>
+<div class="ui" id="ui"></div>
+<script>
+const P = new URLSearchParams(location.search);
+const V = P.get('v') || 'A', STATE = P.get('s') || 'calma', PHONE = P.get('d') === 'phone';
+document.body.className = `v${V} ${PHONE ? 'phone' : ''}`;
+const css = getComputedStyle(document.body);
+const col = (n) => css.getPropertyValue(n).trim();
+const NOW = 10 + 5 / 60;
+const EVENTS = [[9, 10, 'Revisión de color — NAVUA'], [10.5, 11.25, 'Llamada con Julio'], [13, 14.5, 'Comida con Ana · NODO'], [16.5, 18.5, 'Scouting · Tulum']];
+const MIC = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.4" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+const KEY = '<svg width="24" height="20" viewBox="0 0 26 22" fill="none" stroke-width="1.3" stroke-linecap="round"><rect x="2" y="4" width="22" height="14" rx="2.5"/><path d="M6 8h1M10 8h1M14 8h1M18 8h1M6 11h1M10 11h1M14 11h1M18 11h1M8 14.5h10"/></svg>';
+const label = { calma: 'En línea', escucha: 'Escuchando', piensa: 'Procesando', habla: 'Hablando', confirma: 'Necesita tu sí' }[STATE];
+let html = `<div class="top"><span class="brand">FRIDAY</span><span>${PHONE ? '' : 'Lun 02 Nov · '}10:05 · ${label}</span></div>
+<div class="greet"><h1>Buenos días,<br>Diego.</h1><div class="sub">3 compromisos más · 3 correos sin leer</div>
+<div class="prio"><b>Prioridad</b>Enviar la cotización del rodaje en Tulum antes de las 14:00.</div></div>`;
+if (STATE === 'confirma') {
+  html += `<div class="confirm" style="${PHONE ? '' : 'right:44px; top:50%; transform:translateY(-50%);'}"><div class="tag">Necesita tu sí</div><h2>¿Envío este correo?</h2>
+  <div class="f"><span>Para</span><span>Julio Pérez</span></div><div class="f"><span>Asunto</span><span>Cotización — rodaje Tulum</span></div>
+  <div class="f"><span>Texto</span><span style="color:var(--dim)">Hola Julio, te comparto la cotización: dos días de grabación, equipo de cinco personas…</span></div>
+  <div class="btns"><span class="yes">Enviar</span><span class="no">Editar</span><span class="no">Cancelar</span></div></div>`;
+} else if (!PHONE || STATE === 'calma') {
+  html += `<div class="panel" style="${PHONE ? '' : 'top: 50%; transform: translateY(-50%);'}"><h3><span>A continuación</span><span>Hoy</span></h3>
+  ${EVENTS.slice(1).map(([s, e, t]) => `<div class="row"><span class="t">${String(Math.floor(s)).padStart(2, '0')}:${String(Math.round((s % 1) * 60)).padStart(2, '0')}</span><span>${t}<div class="m">${['Meet', 'Puerto Cancún', 'Tulum'][EVENTS.findIndex((x) => x[2] === t) - 1]}</div></span></div>`).join('')}
+  <div class="row"><span class="t">Correo</span><span>Julio: ¿Cotización del rodaje?<div class="m">y 2 más sin leer</div></span></div></div>`;
+}
+html += `<div class="pill">${MIC}<span class="sep"></span><span>${STATE === 'escucha' ? 'Te escucho' : 'Hablar'}</span><span class="sep"></span>${KEY}</div>`;
+document.getElementById('ui').innerHTML = html;
+
+document.fonts.ready.then(drawAll);
+function drawAll() {
+// ---------- Núcleo de luz ----------
+const cv = document.getElementById('c'); const dpr = 2;
+const W = innerWidth, H = innerHeight; cv.width = W * dpr; cv.height = H * dpr;
+const g = cv.getContext('2d'); g.scale(dpr, dpr);
+const cx = PHONE ? W / 2 : W * 0.5, cy = PHONE ? H * 0.47 : H * 0.53;
+const R = PHONE ? 118 : 190;
+const LIGHT = STATE === 'confirma' ? col('--warn') : col('--light');
+const rnd = (() => { let s = 7; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+// fondo: profundidad con un resplandor muy tenue
+const bgGrad = g.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.7);
+const tint = { A: 'rgba(30,110,140,.16)', B: 'rgba(255,240,215,.05)', C: 'rgba(90,90,200,.14)' }[V];
+bgGrad.addColorStop(0, STATE === 'confirma' ? 'rgba(160,100,20,.14)' : tint); bgGrad.addColorStop(1, 'rgba(0,0,0,0)');
+g.fillStyle = col('--bg'); g.fillRect(0, 0, W, H); g.fillStyle = bgGrad; g.fillRect(0, 0, W, H);
+g.globalCompositeOperation = 'lighter';
+function glowStroke(width, alpha, blur, color = LIGHT) { g.lineWidth = width; g.strokeStyle = hexA(color, alpha); g.shadowColor = hexA(color, Math.min(1, alpha * 1.4)); g.shadowBlur = blur; g.stroke(); g.shadowBlur = 0; }
+function hexA(hex, a) { const h = hex.replace('#', ''); const n = parseInt(h, 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
+function arc(r, a0, a1) { g.beginPath(); g.arc(cx, cy, r, a0, a1); }
+const ANG = (h) => (h / 24) * Math.PI * 2 - Math.PI / 2;
+// Prisma: cada anillo se dibuja tres veces con un leve desfase de color (dispersión)
+const passes = V === 'C' && STATE !== 'confirma' ? [['#ff7a9c', -0.8], ['#7affd8', 0], ['#7aa2ff', 0.8]] : [[LIGHT, 0]];
+for (const [pc, off] of passes) {
+  const lc = pc; const sc = passes.length > 1 ? 0.55 : 1;
+  // centro
+  const core = g.createRadialGradient(cx, cy, 0, cx, cy, R * 0.42);
+  core.addColorStop(0, hexA(lc, 0.9 * sc)); core.addColorStop(0.25, hexA(lc, 0.35 * sc)); core.addColorStop(1, hexA(lc, 0));
+  g.fillStyle = core; g.beginPath(); g.arc(cx, cy, R * 0.42, 0, Math.PI * 2); g.fill();
+  // anillos segmentados
+  const rings = V === 'B'
+    ? [[0.30, 1.2, 1, 0.9], [0.46, 0.8, 3, 0.5], [0.62, 0.6, 1, 0.35]]
+    : [[0.26, 2, 6, 0.9], [0.34, 1, 1, 0.55], [0.44, 3, 12, 0.7], [0.55, 0.8, 1, 0.4], [0.66, 1.4, 36, 0.55]];
+  rings.forEach(([rr, w, segs, a], i) => {
+    const rot = i * 0.7 + (STATE === 'piensa' ? i * 0.35 : 0);
+    for (let s = 0; s < segs; s++) {
+      const span = (Math.PI * 2) / segs; const gap = segs > 1 ? span * (segs > 20 ? 0.45 : 0.12) : 0;
+      arc(R * rr + off, rot + s * span + gap / 2, rot + (s + 1) * span - gap / 2);
+      glowStroke(w, a * sc, 10);
+    }
+  });
+  // marcas de minutos
+  if (V !== 'B') for (let k = 0; k < 120; k++) { const a = (k / 120) * Math.PI * 2; const r1 = R * 0.75 + off, r2 = r1 + (k % 10 === 0 ? 9 : 4);
+    g.beginPath(); g.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); g.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2); glowStroke(1, (k % 10 === 0 ? 0.6 : 0.25) * sc, 4); }
+}
+// reloj del día: pista de 24 h, eventos como arcos, aguja de la hora actual
+const RD = R * 0.92;
+arc(RD, 0, Math.PI * 2); glowStroke(1, 0.18, 0);
+EVENTS.forEach(([s, e], i) => { arc(RD, ANG(s) + 0.01, ANG(e) - 0.01); glowStroke(5, s < NOW && e < NOW ? 0.3 : 0.85, 16, i === 1 && STATE !== 'confirma' ? col('--accent') : LIGHT); });
+if (!PHONE) EVENTS.forEach(([s, , t]) => { const a = ANG(s); const x = cx + Math.cos(a) * (RD + 26), y = cy + Math.sin(a) * (RD + 26);
+  g.globalCompositeOperation = 'source-over'; g.font = `11px ${col('--label')}`; g.fillStyle = hexA(LIGHT, s < NOW - 1 ? 0.45 : 0.85); g.textAlign = Math.cos(a) < 0 ? 'right' : 'left';
+  g.fillText(`${String(Math.floor(s)).padStart(2, '0')}:${String(Math.round((s % 1) * 60)).padStart(2, '0')}  ${t.split(' ')[0]}`, x, y + 4); g.globalCompositeOperation = 'lighter'; });
+for (const h of [0, 6, 12, 18]) { const a = ANG(h); g.globalCompositeOperation = 'source-over'; g.font = `10px ${col('--label')}`; g.fillStyle = hexA(LIGHT, 0.35); g.textAlign = 'center';
+  g.fillText(String(h).padStart(2, '0'), cx + Math.cos(a) * (RD - 16), cy + Math.sin(a) * (RD - 16) + 3); g.globalCompositeOperation = 'lighter'; }
+const an = ANG(NOW); g.beginPath(); g.moveTo(cx + Math.cos(an) * R * 0.5, cy + Math.sin(an) * R * 0.5); g.lineTo(cx + Math.cos(an) * (RD + 10), cy + Math.sin(an) * (RD + 10)); glowStroke(1.4, 0.9, 10);
+g.beginPath(); g.arc(cx + Math.cos(an) * RD, cy + Math.sin(an) * RD, 4, 0, Math.PI * 2); g.fillStyle = hexA(LIGHT, 1); g.shadowColor = LIGHT; g.shadowBlur = 18; g.fill(); g.shadowBlur = 0;
+// estados
+if (STATE === 'escucha' || STATE === 'habla') { // tu voz real dibujada como espectro alrededor
+  for (let k = 0; k < 96; k++) { const a = (k / 96) * Math.PI * 2; const v = Math.pow(Math.abs(Math.sin(k * 0.37) * Math.sin(k * 0.13 + 1)), 1.5) * 0.8 + rnd() * 0.2;
+    const r1 = R * 1.05, r2 = r1 + 6 + v * (PHONE ? 30 : 46);
+    g.beginPath(); g.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); g.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2); glowStroke(2, 0.75, 12); }
+}
+if (STATE === 'piensa') { const sw = g.createConicGradient ? g.createConicGradient(-0.6, cx, cy) : null;
+  if (sw) { sw.addColorStop(0, hexA(LIGHT, 0.0)); sw.addColorStop(0.12, hexA(LIGHT, 0.28)); sw.addColorStop(0.125, hexA(LIGHT, 0)); sw.addColorStop(1, hexA(LIGHT, 0)); g.fillStyle = sw; g.beginPath(); g.arc(cx, cy, R * 0.9, 0, Math.PI * 2); g.fill(); } }
+// polvo de luz y grano
+g.globalCompositeOperation = 'lighter';
+for (let k = 0; k < (V === 'B' ? 40 : 140); k++) { const a = rnd() * Math.PI * 2, d = R * (0.3 + rnd() * 1.8); g.fillStyle = hexA(LIGHT, rnd() * 0.35); g.fillRect(cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.8, 1.2, 1.2); }
+g.globalCompositeOperation = 'source-over';
+const img = g.getImageData(0, 0, cv.width, cv.height); const dd = img.data;
+for (let i = 0; i < dd.length; i += 4) { const n = (rnd() - 0.5) * 10; dd[i] += n; dd[i + 1] += n; dd[i + 2] += n; }
+g.putImageData(img, 0, 0);
+if (V === 'A') { g.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 0; y < H; y += 3) g.fillRect(0, y, W, 1); } // líneas de barrido casi invisibles
+const vig = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75); vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,.55)');
+g.fillStyle = vig; g.fillRect(0, 0, W, H);
+document.body.dataset.ready = '1';
+}
+</script></body></html>
