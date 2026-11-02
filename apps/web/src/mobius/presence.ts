@@ -17,6 +17,14 @@ export const presence = {
 
 export const usePresence = () => useSyncExternalStore(presence.subscribe, presence.get);
 
+/**
+ * Nivel de audio REAL (micrófono o voz de FRIDAY), 0..1. Se actualiza ~60 veces por segundo,
+ * así que no avisa a React: la Möbius lo lee directamente en cada cuadro.
+ * null = no hay audio real; se usa el simulador.
+ */
+let live: number | null = null;
+export const liveLevel = { get: () => live, set: (v: number | null) => { live = v; } };
+
 export const STATE_LABEL: Record<PresenceState, string> = {
   calm: 'En calma', listen: 'Te escucha', think: 'Pensando', speak: 'Hablando',
 };

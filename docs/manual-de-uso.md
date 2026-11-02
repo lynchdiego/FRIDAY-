@@ -10,7 +10,9 @@ Abre la app y escribe tu contraseña. La sesión dura 30 días en ese dispositiv
 
 ## Hablarle o escribirle
 - **Escribir:** usa el campo «Pregúntame lo que sea» y presiona la flecha.
-- **Hablar:** mantén presionado «Hablar» (o ⌥ + espacio en la Mac). *(Disponible en la etapa 5.)*
+- **Hablar:** mantén presionado «Hablar» (o ⌥ + espacio en la Mac) mientras hablas y suelta al terminar. FRIDAY te contesta con voz.
+- **Silencio:** el botón redondo con la bocina apaga la voz de FRIDAY en ese dispositivo (todo sigue por texto).
+- **Leer en voz alta:** en el Resumen, te lee tu día.
 
 Ejemplos:
 - «¿Qué tengo hoy?» · «¿Qué sigue?» · «¿Estoy libre el jueves en la tarde?»

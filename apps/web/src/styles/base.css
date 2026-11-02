@@ -37,7 +37,7 @@ button { cursor: pointer; }
 .btn {
   min-height: 44px; padding: 0 22px; border-radius: var(--r-pill);
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  font-size: 15px; font-weight: 500; letter-spacing: -0.01em; border: 0;
+  font-size: 15px; font-weight: 500; letter-spacing: -0.01em; border: 0; white-space: nowrap;
   transition: transform .2s var(--ease), background .2s var(--ease), opacity .2s;
 }
 .btn:active { transform: scale(.97); }

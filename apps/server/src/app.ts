@@ -7,6 +7,7 @@ import { runTurn, conversationView } from './agent/run';
 import { confirmAction, cancelAction } from './agent/actions';
 import { spend } from './agent/usage';
 import { audit } from './agent/audit';
+import { registerVoice, voiceEnabled } from './voice';
 import { login, logout, requireAuth, SESSION_COOKIE } from './security/auth';
 import { randomToken } from './security/crypto';
 import { today } from './agent/today';
@@ -91,13 +92,15 @@ export async function buildApp(deps: Deps) {
     return { ok: true };
   });
 
+  registerVoice(app, deps, auth);
+
   // Habilidades y permisos (fuente única de verdad)
   app.get('/api/skills', { preHandler: auth }, async () => ({ skills: SKILLS.map(({ description, ...s }) => ({ ...s, description })), never: NEVER_RULES, groups: GROUP_LABEL, permissions: PERMISSION_LABEL }));
 
   // Ajustes y costos
   app.get('/api/settings', { preHandler: auth }, async (req) => {
     const s = await spend(db, req.userId!, config.FRIDAY_TZ);
-    return { model: config.MODEL_DEFAULT, modelHeavy: config.MODEL_HEAVY, llm: deps.llm.name, integraciones: deps.integ.name, limiteDiarioUsd: config.DAILY_LIMIT_USD, costo: s };
+    return { model: config.MODEL_DEFAULT, modelHeavy: config.MODEL_HEAVY, llm: deps.llm.name, integraciones: deps.integ.name, voz: voiceEnabled(config) ? 'elevenlabs' : 'navegador', limiteDiarioUsd: config.DAILY_LIMIT_USD, costo: s };
   });
   app.get('/api/audit', { preHandler: auth }, async (req) => {
     const r = await db.query('SELECT at, event, tool, action_id, detail FROM audit_log WHERE user_id=$1 ORDER BY id DESC LIMIT 100', [req.userId]);

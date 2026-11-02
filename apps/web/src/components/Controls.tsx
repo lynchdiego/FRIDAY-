@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Mic, Pen, Mute, ArrowUp } from './icons';
-import { presence, simulateReply, startListening, usePresence } from '../mobius/presence';
+import { Mic, Pen, Mute, ArrowUp, Speaker } from './icons';
+import { presence } from '../mobius/presence';
 import { chat, useChat } from '../state/chat';
+import { useVoice, voice } from '../voice/voice';
+import { pressTalk, releaseTalk } from '../voice/ptt';
 
 /** Botón Hablar: mantener presionado para hablar (ratón, dedo o teclado). */
 export function TalkButton({ className = '' }: { className?: string }) {
-  const { state } = usePresence();
-  const down = (e: React.PointerEvent) => { (e.target as HTMLElement).setPointerCapture?.(e.pointerId); startListening(); };
-  const up = () => { if (presence.get().state === 'listen') simulateReply(); };
+  const { listening } = useVoice();
+  const down = (e: React.PointerEvent) => { (e.target as HTMLElement).setPointerCapture?.(e.pointerId); pressTalk(); };
   return (
-    <button className={`btn btn-primary ${className}`} onPointerDown={down} onPointerUp={up} onPointerCancel={up}
-      onKeyDown={(e) => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) startListening(); }}
-      onKeyUp={(e) => { if (e.key === ' ' || e.key === 'Enter') up(); }}
-      aria-pressed={state === 'listen'}>
-      <Mic /> {state === 'listen' ? 'Te escucho' : 'Hablar'}
+    <button className={`btn btn-primary ${className}`} onPointerDown={down} onPointerUp={releaseTalk} onPointerCancel={releaseTalk}
+      onContextMenu={(e) => e.preventDefault()}
+      onKeyDown={(e) => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); pressTalk(); } }}
+      onKeyUp={(e) => { if (e.key === ' ' || e.key === 'Enter') releaseTalk(); }}
+      aria-pressed={listening || presence.get().state === 'listen'}>
+      <Mic /> {listening ? 'Te escucho' : 'Hablar'}
     </button>
   );
 }
@@ -22,12 +24,13 @@ export function WriteButton({ onClick, className = '' }: { onClick?: () => void;
   return <button className={`btn frosted ${className}`} onClick={onClick}><Pen /> Escribir</button>;
 }
 
+/** Silencio: apaga la voz de FRIDAY (solo texto). Se recuerda en este dispositivo. */
 export function MuteButton() {
-  const [muted, setMuted] = useState(false);
+  const { on } = useVoice();
   return (
-    <button className="btn btn-circle clear" aria-pressed={muted} aria-label={muted ? 'Activar voz' : 'Silenciar voz'}
-      title={muted ? 'Voz desactivada: solo texto' : 'Silenciar'} onClick={() => setMuted(!muted)}>
-      <Mute />
+    <button className="btn btn-circle clear" aria-pressed={!on} aria-label={on ? 'Silenciar voz' : 'Activar voz'}
+      title={on ? 'Silenciar: solo texto' : 'Voz desactivada: toca para activarla'} onClick={() => voice.toggle()}>
+      {on ? <Speaker /> : <Mute />}
     </button>
   );
 }
@@ -54,11 +57,9 @@ export function AskField({ id, className = '', material = 'clear', autoFocus }: 
 export function useTalkShortcut() {
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.altKey && e.code === 'Space') { e.preventDefault(); if (!e.repeat) startListening(); }
+      if (e.altKey && e.code === 'Space') { e.preventDefault(); if (!e.repeat) pressTalk(); }
     };
-    const up = (e: KeyboardEvent) => {
-      if ((e.code === 'Space' || e.key === 'Alt') && presence.get().state === 'listen') simulateReply();
-    };
+    const up = (e: KeyboardEvent) => { if (e.code === 'Space' || e.key === 'Alt') releaseTalk(); };
     window.addEventListener('keydown', down);
     window.addEventListener('keyup', up);
     return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); };

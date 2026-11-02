@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import type { Card, ChatReply } from '@friday/shared';
 import { presence } from '../mobius/presence';
 import { mock } from '../data/mock';
+import { speak, voice } from '../voice/voice';
 
 /**
  * Estado de la conversación y conexión con el servidor de FRIDAY.
@@ -45,7 +46,7 @@ export const chat = {
       const h = await fetch('/api/health', { signal: AbortSignal.timeout(3000) }).then((r) => (r.ok ? r.json() : null));
       if (!h?.ok) throw new Error();
       set({ mode: 'server' });
-      try { const me = await api<{ tz: string }>('/me'); set({ authed: true, tz: me.tz }); } catch { /* muestra login */ }
+      try { const me = await api<{ tz: string }>('/me'); set({ authed: true, tz: me.tz }); await voice.loadConfig(true); } catch { /* muestra login */ }
     } catch { set({ mode: 'demo', authed: true }); }
   },
 
@@ -53,10 +54,14 @@ export const chat = {
     await api('/login', { password });
     const me = await api<{ tz: string }>('/me');
     set({ authed: true, tz: me.tz });
+    await voice.loadConfig(true);
   },
+
+  get: () => s,
 
   async send(text: string, channel: 'texto' | 'voz' = 'texto') {
     if (!text.trim() || s.busy) return;
+    voice.stopSpeaking();
     set({ messages: [...s.messages, { role: 'user', text, cards: [] }], busy: true });
     presence.set({ state: 'think' });
     try {
@@ -65,7 +70,9 @@ export const chat = {
         : await demoReply(text);
       const action = r.cards.find((c): c is ActionCard => c.type === 'action');
       set({ conversationId: r.conversationId, messages: [...s.messages, { role: 'assistant', text: r.text, cards: r.cards }], action: action ?? s.action });
-      speakFor(r.text);
+      // Si le hablaste, FRIDAY responde con voz (a menos que esté en silencio).
+      if (channel === 'voz' && voice.get().on) speak(r.text);
+      else speakFor(r.text);
     } catch (e) {
       set({ messages: [...s.messages, { role: 'assistant', text: `No pude responder: ${(e as Error).message}`, cards: [] }] });
       presence.set({ state: 'calm' });

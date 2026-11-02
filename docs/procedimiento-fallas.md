@@ -13,6 +13,10 @@
 | «La confirmación venció» | Pasaron más de 5 minutos. | Pide a FRIDAY que la prepare de nuevo. |
 | «Esta confirmación no es válida o ya se usó» | Se confirmó dos veces o el enlace es viejo. | Nada que hacer: no se ejecutó dos veces. |
 | La app pide contraseña otra vez | La sesión venció (30 días) o se cerró. | Entra de nuevo. 5 intentos fallidos bloquean 15 minutos. |
+| «No tengo permiso para usar el micrófono» | El navegador bloqueó el micrófono. | Mac: Safari/Chrome → Ajustes del sitio → Micrófono → Permitir. iPhone: Ajustes → Safari → Micrófono. |
+| «No te escuché» | Fue un toque corto o no hubo audio. | Mantén presionado mientras hablas. |
+| «No pude transcribir. Escríbemelo» | ElevenLabs no respondió o sin saldo. | Escribe por ahora; revisa tu cuenta de ElevenLabs. |
+| FRIDAY responde pero sin voz | Silencio activado, o la voz falló. | Toca el botón de la bocina. Si sigue, revisa ElevenLabs; la respuesta siempre queda en pantalla. |
 | La cinta de luz no se ve | El equipo no puede dibujar 3D; aparece un anillo quieto. | No afecta a FRIDAY. Reporta el equipo y navegador. |
 
 ## Revisar qué pasó

@@ -6,8 +6,8 @@ Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NO
 1. Plan — **aprobado** (`docs/plan-etapa-1.md`).
 2. Interfaz y Möbius — **aprobado** (2026-11-01). Ajustes posteriores: estados más distintos; Inicio responsivo para iPhone.
 3. Cerebro por texto — **aprobado** (2026-11-01). Falta la prueba corta con Claude real (`npm run test:live`) cuando Diego tenga su llave.
-4. Google (Calendar, Gmail, **Tasks**) + resumen del día + pantalla 5 — **hecho, pendiente de aprobación** (`docs/etapa-4.md`). 23 pruebas pasan. Google real listo pero sin conectar (guía: `docs/google-setup.md`).
-5. Voz — después de la 4. Igual: simuladores/voz del navegador y ElevenLabs al final.
+4. Google (Calendar, Gmail, **Tasks**) + resumen del día + pantalla 5 — **aprobado** (2026-11-02). Google real listo pero sin conectar (guía: `docs/google-setup.md`).
+5. Voz — **hecho, pendiente de aprobación** (`docs/etapa-5.md`). 28 pruebas pasan. ElevenLabs listo pero sin llave (hoy: voz del navegador).
 6–7. Sin empezar.
 
 ## Acuerdos con Diego (2026-11-01)
@@ -33,7 +33,10 @@ Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NO
 - Resumen del día: `agent/today.ts` → `GET /api/today` (prioridad: modelo 1×/día en `settings`, o heurística con el simulado). Web: `state/today.ts` (`toView`).
 - Pantalla 5: `apps/web/src/screens/Skills.tsx` (lee `/api/skills`; cada habilidad tiene `help` para Diego y `description` para el modelo).
 - Web: `state/chat.ts` (modo `server` o `demo` si no hay servidor), `screens/Chat.tsx` (pantalla 3), `components/Cards.tsx`, `ConfirmSheet.tsx` (pantalla 4 real). Horas siempre en la zona de Diego (`/api/me`).
-- Möbius: `apps/web/src/mobius/` (`Mobius.ts` motor y `TARGETS` por estado, `shaders.ts`, `presence.ts`). Etapa 5: `presence.set` recibe el nivel real de audio.
+- Möbius: `apps/web/src/mobius/` (`Mobius.ts` motor y `TARGETS` por estado, `shaders.ts`, `presence.ts`). Nivel de audio real en `liveLevel` (no emite a React; la Möbius lo lee cada cuadro); null → simulador.
+- **Voz**: servidor `apps/server/src/voice.ts` (proxy ElevenLabs: `POST /api/voice/tts` → enlace de un solo uso `GET /api/voice/tts/:id` que transmite el audio por partes; `POST /api/voice/stt` audio crudo → Scribe; costos en `usage_log` con modelo `elevenlabs:*`; `ELEVENLABS_BASE_URL` configurable). Web `apps/web/src/voice/voice.ts` (micrófono → AnalyserNode → `liveLevel`; MediaRecorder si STT=elevenlabs, si no `SpeechRecognition` es-MX; reproductor único conectado a analizador; `speechSynthesis` de respaldo) y `voice/ptt.ts` (mantener para hablar). Responde con voz solo si el canal fue voz. Silencio en localStorage `friday.voz`.
+- iPhone: el audio se "desbloquea" UNA vez con un WAV silencioso durante un toque (`unlockAudio`); repetirlo pausaba la voz de FRIDAY (bug corregido).
+- Diagnóstico solo en desarrollo: `window.__friday` (`presence`, `liveLevel`).
 
 ## Cómo correr
 - Pruebas: `npm test` (simulado, gratis) · `npm run test:live` (Claude real, requiere `ANTHROPIC_API_KEY`, centavos).
@@ -47,6 +50,7 @@ Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NO
 ## Pendientes
 - Prueba con Claude real (Diego crea cuenta en platform.claude.com, US$10 de saldo, límite mensual ~US$20).
 - Conectar el Google real de Diego (`docs/google-setup.md`) — al final, según el plan de llaves.
-- Etapa 5: voz.
-- Verificar precios de ElevenLabs y STT en páginas oficiales antes de la etapa 5.
+- Conectar ElevenLabs (voz original con Voice Design) al final; verificar precios y nombres de modelo en elevenlabs.io (bloqueado desde el servidor de desarrollo).
+- Ajustar la ganancia del medidor de micrófono (`startMeter(an, 7)`) con la voz real de Diego.
+- Etapa 6: recordatorios y resumen programado de las 7:30 con notificaciones.
 - Resumir historial por día (`summaries`) cuando las conversaciones crezcan.

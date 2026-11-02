@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Mobius } from './Mobius';
-import { presence, syntheticVoice } from './presence';
+import { presence, syntheticVoice, liveLevel } from './presence';
 
 export function MobiusView({ className, distance }: { className?: string; distance?: number }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -14,7 +14,8 @@ export function MobiusView({ className, distance }: { className?: string; distan
       const { state, level, auto } = presence.get();
       m.setState(state);
       const active = state === 'listen' || state === 'speak';
-      m.setLevel(active ? (auto ? syntheticVoice((performance.now() - t0) / 1000) : level) : 0);
+      const real = liveLevel.get();
+      m.setLevel(active ? (real ?? (auto ? syntheticVoice((performance.now() - t0) / 1000) : level)) : 0);
       raf = requestAnimationFrame(tick);
     };
     tick();

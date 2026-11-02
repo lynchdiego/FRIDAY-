@@ -1,6 +1,7 @@
 import { MobiusView } from '../mobius/MobiusView';
 import { mock, greeting, shortDay, clock } from '../data/mock';
 import { useToday } from '../state/today';
+import { speak, unlockAudio } from '../voice/voice';
 import { usePresence, STATE_LABEL } from '../mobius/presence';
 import { TalkButton, WriteButton, MuteButton, AskField, useNow } from '../components/Controls';
 import { Speaker, Sliders } from '../components/icons';
@@ -38,7 +39,7 @@ export function Today({ onAsk, onSkills }: { onAsk: (text: string) => void; onSk
         <div className="today-dock frosted" role="toolbar" aria-label="Controles de voz">
         <TalkButton />
         <WriteButton onClick={() => document.getElementById('ask-today')?.focus()} />
-        <button className="btn clear"><Speaker /> Leer en voz alta</button>
+        <button className="btn clear" onClick={() => { unlockAudio(); speak(`${greeting(now)}, ${mock.name}. ${t.summary} ${t.priority ? `Tu prioridad: ${t.priority}` : ''}`); }}><Speaker /> Leer en voz alta</button>
           <MuteButton />
         </div>
       </div>
