@@ -75,14 +75,20 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .phone .panel { right: 16px; left: 16px; width: auto; bottom: 120px; }
 .phone .pill { bottom: 34px; }
 .phone .confirm { left: 16px; right: 16px; width: auto; bottom: 110px; }
+.taller .panel { transform: perspective(1100px) rotateY(-16deg) translateY(-50%) !important; transform-origin: right center; box-shadow: 0 0 40px rgba(127,231,255,.08); }
+.taller .confirm { transform: perspective(1100px) rotateY(-12deg) translateY(-50%) !important; transform-origin: right center; }
+.taller.phone .panel, .taller.phone .confirm { transform: none !important; }
+.taller .pill { bottom: 54px; }
 </style></head>
 <body>
+<canvas id="bg"></canvas>
 <canvas id="c"></canvas>
 <div class="ui" id="ui"></div>
 <script>
 const P = new URLSearchParams(location.search);
 const V = P.get('v') || 'A', STATE = P.get('s') || 'calma', PHONE = P.get('d') === 'phone';
-document.body.className = `v${V} ${PHONE ? 'phone' : ''}`;
+const TALLER = P.get('bg') === 'taller';
+document.body.className = `v${V} ${PHONE ? 'phone' : ''} ${TALLER ? 'taller' : ''}`;
 const css = getComputedStyle(document.body);
 const col = (n) => css.getPropertyValue(n).trim();
 const NOW = 10 + 5 / 60;
@@ -112,7 +118,8 @@ function drawAll() {
 const cv = document.getElementById('c'); const dpr = 2;
 const W = innerWidth, H = innerHeight; cv.width = W * dpr; cv.height = H * dpr;
 const g = cv.getContext('2d'); g.scale(dpr, dpr);
-const cx = PHONE ? W / 2 : W * 0.5, cy = PHONE ? H * 0.47 : H * 0.53;
+const cx = PHONE ? W / 2 : W * 0.5, cy = PHONE ? H * 0.45 : H * (TALLER ? 0.47 : 0.53);
+if (TALLER) drawWorkshop(W, H, dpr);
 const R = PHONE ? 118 : 190;
 const LIGHT = STATE === 'confirma' ? col('--warn') : col('--light');
 const rnd = (() => { let s = 7; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
@@ -120,7 +127,7 @@ const rnd = (() => { let s = 7; return () => (s = (s * 16807) % 2147483647) / 21
 const bgGrad = g.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.7);
 const tint = { A: 'rgba(30,110,140,.16)', B: 'rgba(255,240,215,.05)', C: 'rgba(90,90,200,.14)' }[V];
 bgGrad.addColorStop(0, STATE === 'confirma' ? 'rgba(160,100,20,.14)' : tint); bgGrad.addColorStop(1, 'rgba(0,0,0,0)');
-g.fillStyle = col('--bg'); g.fillRect(0, 0, W, H); g.fillStyle = bgGrad; g.fillRect(0, 0, W, H);
+if (!TALLER) { g.fillStyle = col('--bg'); g.fillRect(0, 0, W, H); } g.fillStyle = bgGrad; g.fillRect(0, 0, W, H);
 g.globalCompositeOperation = 'lighter';
 function glowStroke(width, alpha, blur, color = LIGHT) { g.lineWidth = width; g.strokeStyle = hexA(color, alpha); g.shadowColor = hexA(color, Math.min(1, alpha * 1.4)); g.shadowBlur = blur; g.stroke(); g.shadowBlur = 0; }
 function hexA(hex, a) { const h = hex.replace('#', ''); const n = parseInt(h, 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
@@ -173,12 +180,79 @@ if (STATE === 'piensa') { const sw = g.createConicGradient ? g.createConicGradie
 g.globalCompositeOperation = 'lighter';
 for (let k = 0; k < (V === 'B' ? 40 : 140); k++) { const a = rnd() * Math.PI * 2, d = R * (0.3 + rnd() * 1.8); g.fillStyle = hexA(LIGHT, rnd() * 0.35); g.fillRect(cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.8, 1.2, 1.2); }
 g.globalCompositeOperation = 'source-over';
-const img = g.getImageData(0, 0, cv.width, cv.height); const dd = img.data;
+if (!TALLER) { const img = g.getImageData(0, 0, cv.width, cv.height); const dd = img.data;
 for (let i = 0; i < dd.length; i += 4) { const n = (rnd() - 0.5) * 10; dd[i] += n; dd[i + 1] += n; dd[i + 2] += n; }
-g.putImageData(img, 0, 0);
+g.putImageData(img, 0, 0); }
 if (V === 'A') { g.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 0; y < H; y += 3) g.fillRect(0, y, W, 1); } // líneas de barrido casi invisibles
 const vig = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75); vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,.55)');
 g.fillStyle = vig; g.fillRect(0, 0, W, H);
 document.body.dataset.ready = '1';
 }
+
+// ---------- Taller (original): fondo fuera de foco, como en cine ----------
+function drawWorkshop(W, H, dpr) {
+  const c = document.getElementById('bg'); c.width = W * dpr; c.height = H * dpr;
+  const b = c.getContext('2d'); b.scale(dpr, dpr);
+  const r2 = (() => { let s = 99; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+  const vpx = W * 0.56, hz = H * (PHONE ? 0.52 : 0.56);           // punto de fuga y horizonte
+  // pared y techo
+  let gr = b.createLinearGradient(0, 0, 0, hz); gr.addColorStop(0, '#07090a'); gr.addColorStop(0.55, '#121512'); gr.addColorStop(1, '#0d100f');
+  b.fillStyle = gr; b.fillRect(0, 0, W, hz);
+  // piso brillante (concreto pulido)
+  gr = b.createLinearGradient(0, hz, 0, H); gr.addColorStop(0, '#101413'); gr.addColorStop(1, '#030505');
+  b.fillStyle = gr; b.fillRect(0, hz, W, H - hz);
+  b.globalCompositeOperation = 'lighter';
+  // tiras de luz en el techo, en perspectiva
+  // luz cenital suave (sin líneas duras)
+  b.filter = 'blur(40px)';
+  for (const off of [-0.25, 0.1, 0.38]) { b.beginPath(); b.ellipse(vpx + off * W, H * 0.04, W * 0.12, H * 0.05, 0, 0, Math.PI * 2); b.fillStyle = 'rgba(200,225,215,.10)'; b.fill(); }
+  // ventanales a la derecha
+  b.filter = 'blur(18px)';
+  for (let i = 0; i < 3; i++) { const x = W * (0.8 + i * 0.075), w = W * 0.06;
+    b.beginPath(); b.moveTo(x, H * 0.12 + i * 6); b.lineTo(x + w, H * 0.10 + i * 6); b.lineTo(x + w, H * 0.27); b.lineTo(x, H * 0.29); b.closePath();
+    b.fillStyle = 'rgba(205,220,215,.22)'; b.fill(); }
+  // luces de pared que bañan hacia arriba (franja central)
+  b.filter = 'blur(7px)';
+  const n = PHONE ? 6 : 10, x0 = W * (PHONE ? 0.1 : 0.36), x1 = W * (PHONE ? 0.9 : 0.78), wy = hz - H * 0.07;
+  for (let i = 0; i < n; i++) { const x = x0 + (x1 - x0) * i / (n - 1);
+    const cg = b.createLinearGradient(0, wy, 0, wy - H * 0.13); cg.addColorStop(0, 'rgba(225,245,205,.75)'); cg.addColorStop(1, 'rgba(225,245,205,0)');
+    b.beginPath(); b.moveTo(x - 9, wy); b.lineTo(x + 9, wy); b.lineTo(x + 26, wy - H * 0.13); b.lineTo(x - 26, wy - H * 0.13); b.closePath(); b.fillStyle = cg; b.fill();
+    // reflejo largo en el piso
+    const rg = b.createLinearGradient(0, hz, 0, hz + H * 0.22); rg.addColorStop(0, 'rgba(210,240,200,.20)'); rg.addColorStop(1, 'rgba(210,240,200,0)');
+    const fx = vpx + (x - vpx) * 1.25; b.save(); b.filter = 'blur(16px)'; b.fillStyle = rg; b.fillRect(fx - 14, hz, 28, H * 0.22); b.restore();
+  }
+  // estanterías y equipo a la izquierda (siluetas con lucecitas)
+  b.globalCompositeOperation = 'source-over'; b.filter = 'blur(5px)';
+  for (let i = 0; i < 4; i++) { b.fillStyle = `rgba(4,6,7,${0.75 - i * 0.1})`; b.fillRect(W * (0.02 + i * 0.07), H * (0.18 + i * 0.03), W * 0.06, hz - H * (0.18 + i * 0.03)); }
+  b.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 26; i++) { b.fillStyle = r2() < 0.5 ? 'rgba(110,230,255,.6)' : 'rgba(255,214,150,.45)'; b.fillRect(W * (0.03 + r2() * 0.28), H * (0.22 + r2() * 0.3), 2.5, 2.5); }
+  // bokeh: luces fuera de foco
+  for (const [cnt, bl, amax] of [[PHONE ? 10 : 22, 2, 0.10], [PHONE ? 6 : 12, 7, 0.14]]) { b.filter = `blur(${bl}px)`;
+    for (let i = 0; i < cnt; i++) { const rr = 2 + r2() * (bl > 3 ? 18 : 7); const x = r2() * W, y = hz * (0.2 + r2() * 0.85);
+      b.beginPath(); b.arc(x, y, rr, 0, Math.PI * 2); b.fillStyle = r2() < 0.5 ? `rgba(120,225,255,${0.03 + r2() * amax})` : `rgba(255,224,170,${0.03 + r2() * amax})`; b.fill(); } }
+  // bruma con tinte cian del holograma
+  b.filter = 'none';
+  const hzg = b.createRadialGradient(W / 2, hz, 0, W / 2, hz, W * 0.6); hzg.addColorStop(0, 'rgba(60,170,200,.10)'); hzg.addColorStop(1, 'rgba(0,0,0,0)');
+  b.fillStyle = hzg; b.fillRect(0, 0, W, H);
+  // escritorio curvo de acero desde tu punto de vista
+  b.globalCompositeOperation = 'source-over';
+  const dy = H * (PHONE ? 0.86 : 0.8);
+  b.beginPath(); b.moveTo(-W * 0.1, H + 10); b.quadraticCurveTo(W / 2, dy - H * 0.06, W * 1.1, H + 10); b.closePath();
+  const dg = b.createLinearGradient(0, dy - H * 0.05, 0, H); dg.addColorStop(0, '#2b3437'); dg.addColorStop(0.08, '#1a2124'); dg.addColorStop(1, '#07090a');
+  b.fillStyle = dg; b.fill();
+  b.globalCompositeOperation = 'lighter';
+  // reflejo cian del núcleo sobre el acero y canto iluminado
+  const rf = b.createRadialGradient(W / 2, dy, 0, W / 2, dy, W * 0.35); rf.addColorStop(0, 'rgba(110,225,255,.22)'); rf.addColorStop(1, 'rgba(110,225,255,0)');
+  b.fillStyle = rf; b.fill();
+  b.beginPath(); b.moveTo(-W * 0.1, H + 10); b.quadraticCurveTo(W / 2, dy - H * 0.06, W * 1.1, H + 10);
+  b.strokeStyle = 'rgba(190,240,255,.35)'; b.lineWidth = 1.5; b.filter = 'blur(.6px)'; b.stroke(); b.filter = 'none';
+  // velo para que el texto se lea, grano y viñeta
+  b.globalCompositeOperation = 'source-over';
+  const veil = b.createLinearGradient(0, 0, W * 0.55, 0); veil.addColorStop(0, 'rgba(2,6,9,.72)'); veil.addColorStop(1, 'rgba(2,6,9,0)');
+  b.fillStyle = veil; b.fillRect(0, 0, W, H);
+  const img = b.getImageData(0, 0, c.width, c.height); const d = img.data;
+  for (let i = 0; i < d.length; i += 4) { const k = (r2() - 0.5) * 12; d[i] += k; d[i + 1] += k; d[i + 2] += k; }
+  b.putImageData(img, 0, 0);
+}
+
 </script></body></html>
