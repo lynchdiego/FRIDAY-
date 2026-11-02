@@ -13,6 +13,8 @@ Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NO
 
 **Rediseño visual (2026-11-02):** Diego eligió el **estilo A «Cian táctico»** (luz tipo JARVIS sobre un taller original fuera de foco). Exploración, referencias y decisión en `docs/rediseno/` (cielo dibujado y papel descartados: se veían falsos). Sistema visual en `docs/rediseno/estilo-a.md`. Ya aplicado a toda la app. La Möbius se retiró.
 
+**Decisión de voz (2026-11-02):** Claude sigue como cerebro; la voz pasará de ElevenLabs a **OpenAI** (transcripción + voz; más barato, una cuenta menos). ElevenLabs queda como opción futura para una voz única de marca (NODO). Pendiente: implementar el proveedor de voz OpenAI en `apps/server/src/voice.ts` (configurable, mismo contrato y registro de costos), probado con simulador. Desde este entorno api.openai.com está bloqueado: la prueba real será con FRIDAY publicada. Diego está comprando primero los créditos de Claude (US$10, límite US$20/mes).
+
 **Siguiente paso real:** Diego agrega `ANTHROPIC_API_KEY` como secreto del entorno → sesión nueva → `npm run test:live` y ajustar `prompts/friday.md` con los resultados. Luego publicar (`docs/despliegue.md`, necesita dominio y servidor) y conectar Google y ElevenLabs en producción.
 
 Plan acordado de llaves (2026-11-02): Claude primero (Diego agregará `ANTHROPIC_API_KEY` como secreto del entorno en la nube; en una sesión nueva correr `npm run test:live`); Google y ElevenLabs se conectan con FRIDAY ya publicada (etapa 7). Desde el servidor de desarrollo api.anthropic.com sí responde; elevenlabs.io y developers.google.com están bloqueados.
