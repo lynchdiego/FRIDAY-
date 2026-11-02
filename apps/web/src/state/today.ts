@@ -10,6 +10,9 @@ export interface TodayView {
   next: { kind: string; text: string; meta: string; ask: string }[];
   stats: { value: string; label: string }[];
   day: { time: string; title: string; place: string }[];
+  /** Eventos crudos para el reloj del día del núcleo. */
+  events: { start: string; end: string; allDay?: boolean; title: string }[];
+  emailCount: number;
   errors: string[];
 }
 
@@ -40,6 +43,8 @@ export function toView(d: TodayData): TodayView {
       { value: String(d.reminders.length), label: 'Recordatorios' },
     ],
     day: d.events.map((e) => ({ time: e.allDay ? 'Día' : hhmm(e.start), title: e.title, place: e.location ?? '' })),
+    events: d.events.map(({ start, end, allDay, title }) => ({ start, end, allDay, title })),
+    emailCount: d.emails.length,
     errors: d.errors,
   };
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Compact } from './screens/Compact';
-import { Today } from './screens/Today';
+import { Home } from './screens/Home';
+import { Workshop } from './hud/Workshop';
 import { Chat } from './screens/Chat';
 import { Login } from './screens/Login';
 import { Skills } from './screens/Skills';
@@ -13,7 +13,7 @@ import { mock } from './data/mock';
 import { useInAppNotices } from './state/notices';
 
 const VIEWS = ['inicio', 'hoy', 'conversacion', 'habilidades', 'ajustes'];
-const initial = () => { const h = location.hash.slice(1); return VIEWS.includes(h) ? h : innerWidth > 900 ? 'hoy' : 'inicio'; };
+const initial = () => { const h = location.hash.slice(1); return VIEWS.includes(h) ? h : 'inicio'; };
 
 // Tarjeta de ejemplo para revisar el diseño de la confirmación desde el simulador.
 const demoAction: ActionCard = {
@@ -45,23 +45,24 @@ export function App() {
   useEffect(() => { if (!toast) return; const t = setTimeout(() => chat.clearToast(), 3500); return () => clearTimeout(t); }, [toast]);
   const setView = (v: string) => { location.hash = v; setViewState(v); };
   const ask = (text: string) => { setView('conversacion'); chat.send(text); };
-  const home = () => setView(innerWidth > 900 ? 'hoy' : 'inicio');
+  const home = () => setView('inicio');
   const skills = () => setView('habilidades');
   const settings = () => setView('ajustes');
 
-  if (mode === 'checking') return null;
-  if (mode === 'server' && !authed) return <Login />;
+  if (mode === 'checking') return <Workshop />;
+  if (mode === 'server' && !authed) return <><Workshop /><Login /></>;
 
   return (
     <>
+      <Workshop />
       {view === 'conversacion' ? <Chat onBack={home} />
         : view === 'habilidades' ? <Skills onBack={settings} />
         : view === 'ajustes' ? <Settings onBack={home} onSkills={skills} />
-        : view === 'hoy' ? <Today onAsk={ask} onSkills={settings} />
-        : <div className="compact-stage"><Compact onAsk={ask} onSkills={settings} /></div>}
+        : <Home onAsk={ask} onSettings={settings} />}
       {action && <ConfirmSheet key={action.id + action.token} action={action} />}
       {toast && <div className="toast blur" role="status">{toast}</div>}
-      <Simulator view={view} setView={setView} onConfirm={() => chat.openAction(demoAction)} />
+      {/* Modo de prueba: solo en desarrollo y en la vista previa (demostración), nunca con el servidor real */}
+      {(import.meta.env.DEV || mode === 'demo') && <Simulator view={view} setView={setView} onConfirm={() => chat.openAction(demoAction)} />}
     </>
   );
 }

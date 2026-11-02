@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { MobiusView } from '../mobius/MobiusView';
+import { HudCoreView } from '../hud/HudCoreView';
 import { usePresence, STATE_LABEL } from '../mobius/presence';
 import { useChat } from '../state/chat';
 import { Cards } from '../components/Cards';
@@ -16,7 +16,7 @@ export function Chat({ onBack }: { onBack: () => void }) {
     <main className="chat">
       <header className="chat-head">
         <button className="btn clear" onClick={onBack}>Inicio</button>
-        <MobiusView className="chat-mobius" distance={6.4} />
+        <HudCoreView className="chat-core" />
         <span className="label chat-state">{STATE_LABEL[state]}{mode === 'demo' ? ' · demostración' : ''}</span>
       </header>
       <section className="chat-log" aria-live="polite">

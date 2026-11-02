@@ -50,11 +50,12 @@ FRIDAY no puede enviar desde tu WhatsApp personal (no existe una forma oficial).
 - **Resumen del día:** a las 7:30 te llega tu día en una línea, con la prioridad.
 - Actívalos en **Ajustes → Avisos → Activar** en cada dispositivo. En iPhone, primero agrega FRIDAY a tu pantalla de inicio.
 
-## La presencia (la cinta de luz)
-- **En calma:** tenue y lenta.
-- **Te escucha:** crece y se ondula con tu voz.
-- **Pensando:** un destello la recorre.
-- **Hablando:** pulsa con la voz de FRIDAY.
+## La presencia (el núcleo de luz)
+- **El reloj de tu día:** el anillo exterior marca las 24 horas; tus eventos son arcos de luz y la aguja es la hora actual.
+- **En línea:** los anillos giran despacio y respiran.
+- **Escuchando / Hablando:** alrededor aparece el espectro de la voz (la tuya o la de FRIDAY).
+- **Procesando:** un barrido de escaneo recorre el núcleo.
+- **Ámbar:** algo necesita tu sí. **Rojo breve:** algo falló (FRIDAY te dice qué y propone un plan B).
 
 ## Costos
 FRIDAY registra lo que gasta en Claude y en voz, por día y por mes (Ajustes). Si llega al límite diario (US$2), pasa a modo básico hasta el día siguiente: sigues viendo agenda y pendientes, pero no conversa.

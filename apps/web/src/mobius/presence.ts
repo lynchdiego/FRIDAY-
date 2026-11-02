@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
-import type { PresenceState } from './Mobius';
+/** Los cuatro estados de la presencia. (Ámbar y rojo se derivan de lo que pasa: confirmación pendiente o error.) */
+export type PresenceState = 'calm' | 'listen' | 'think' | 'speak';
 
 // Estado global de la presencia (calma / escucha / piensa / habla) y nivel de audio.
 // En la etapa 2 el nivel viene del simulador; en la etapa 5 vendrá del micrófono
@@ -23,10 +24,13 @@ export const usePresence = () => useSyncExternalStore(presence.subscribe, presen
  * null = no hay audio real; se usa el simulador.
  */
 let live: number | null = null;
+let errorUntil = 0;
+/** Destello rojo breve cuando algo falla. */
+export const alertFlash = { error: () => { errorUntil = performance.now() + 2500; }, isError: () => performance.now() < errorUntil };
 export const liveLevel = { get: () => live, set: (v: number | null) => { live = v; } };
 
 export const STATE_LABEL: Record<PresenceState, string> = {
-  calm: 'En calma', listen: 'Te escucha', think: 'Pensando', speak: 'Hablando',
+  calm: 'En línea', listen: 'Escuchando', think: 'Procesando', speak: 'Hablando',
 };
 
 /** Envolvente sintética que imita una voz (para simular sin micrófono). */

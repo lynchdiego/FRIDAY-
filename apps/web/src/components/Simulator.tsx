@@ -1,19 +1,21 @@
 import { presence, usePresence, STATE_LABEL } from '../mobius/presence';
-import type { PresenceState } from '../mobius/Mobius';
+import type { PresenceState } from '../mobius/presence';
+import { alertFlash } from '../mobius/presence';
 
 /** Panel de prueba de la etapa 2: cambia de estado y simula el volumen del audio. */
 export function Simulator({ view, setView, onConfirm }: { view: string; setView: (v: string) => void; onConfirm: () => void }) {
   const p = usePresence();
   const states: PresenceState[] = ['calm', 'listen', 'think', 'speak'];
   return (
-    <details className="sim blur card" open={!window.matchMedia('(max-width: 599px)').matches}>
+    <details className="sim blur card">
       <summary>Simulador</summary>
       <div className="sim-row">
         <span className="label">Pantalla</span>
         <div className="seg">
-          {[['inicio', 'Inicio'], ['hoy', 'Resumen'], ['conversacion', 'Conversación'], ['ajustes', 'Ajustes'], ['habilidades', 'Permisos']].map(([k, l]) =>
+          {[['inicio', 'Inicio'], ['conversacion', 'Conversación'], ['ajustes', 'Ajustes'], ['habilidades', 'Permisos']].map(([k, l]) =>
             <button key={k} className={`chip ${view === k ? 'on' : ''}`} onClick={() => setView(k)}>{l}</button>)}
           <button className="chip" onClick={onConfirm}>Confirmación</button>
+          <button className="chip" onClick={() => alertFlash.error()}>Error</button>
         </div>
       </div>
       <div className="sim-row">

@@ -11,6 +11,8 @@ Asistente ejecutivo personal de Diego Lynch (piloto; luego paquete premium de NO
 6. Recordatorios y resumen 7:30 — **hecho** (`docs/etapa-6.md`); Diego autorizó continuar con 6 y 7 seguidas.
 7. Pulido y despliegue — **hecho, pendiente de revisión de Diego** (`docs/etapa-7.md`). 39 pruebas + prueba real con Docker (HTTPS, login, chat, respaldo y restauración).
 
+**Rediseño visual (2026-11-02):** Diego eligió el **estilo A «Cian táctico»** (luz tipo JARVIS sobre un taller original fuera de foco). Exploración, referencias y decisión en `docs/rediseno/` (cielo dibujado y papel descartados: se veían falsos). Sistema visual en `docs/rediseno/estilo-a.md`. Ya aplicado a toda la app. La Möbius se retiró.
+
 **Siguiente paso real:** Diego agrega `ANTHROPIC_API_KEY` como secreto del entorno → sesión nueva → `npm run test:live` y ajustar `prompts/friday.md` con los resultados. Luego publicar (`docs/despliegue.md`, necesita dominio y servidor) y conectar Google y ElevenLabs en producción.
 
 Plan acordado de llaves (2026-11-02): Claude primero (Diego agregará `ANTHROPIC_API_KEY` como secreto del entorno en la nube; en una sesión nueva correr `npm run test:live`); Google y ElevenLabs se conectan con FRIDAY ya publicada (etapa 7). Desde el servidor de desarrollo api.anthropic.com sí responde; elevenlabs.io y developers.google.com están bloqueados.
@@ -38,7 +40,7 @@ Plan acordado de llaves (2026-11-02): Claude primero (Diego agregará `ANTHROPIC
 - Resumen del día: `agent/today.ts` → `GET /api/today` (prioridad: modelo 1×/día en `settings`, o heurística con el simulado). Web: `state/today.ts` (`toView`).
 - Pantalla 5: `apps/web/src/screens/Skills.tsx` (lee `/api/skills`; cada habilidad tiene `help` para Diego y `description` para el modelo).
 - Web: `state/chat.ts` (modo `server` o `demo` si no hay servidor), `screens/Chat.tsx` (pantalla 3), `components/Cards.tsx`, `ConfirmSheet.tsx` (pantalla 4 real). Horas siempre en la zona de Diego (`/api/me`).
-- Möbius: `apps/web/src/mobius/` (`Mobius.ts` motor y `TARGETS` por estado, `shaders.ts`, `presence.ts`). Nivel de audio real en `liveLevel` (no emite a React; la Möbius lo lee cada cuadro); null → simulador.
+- **Presencia (estilo A)**: `apps/web/src/hud/HudCore.ts` (núcleo de luz 2D con reloj del día, espectro de voz, ámbar/rojo) + `HudCoreView.tsx`; fondo `hud/Workshop.tsx` (intercambiable por foto). Estado global en `apps/web/src/mobius/presence.ts` (nombre de carpeta heredado): `presence` (calm/listen/think/speak), `liveLevel` (voz real, no emite a React), `alertFlash` (rojo). Inicio único `screens/Home.tsx` (rutas `#inicio` y `#hoy`). Simulador solo en desarrollo o modo demo.
 - **Voz**: servidor `apps/server/src/voice.ts` (proxy ElevenLabs: `POST /api/voice/tts` → enlace de un solo uso `GET /api/voice/tts/:id` que transmite el audio por partes; `POST /api/voice/stt` audio crudo → Scribe; costos en `usage_log` con modelo `elevenlabs:*`; `ELEVENLABS_BASE_URL` configurable). Web `apps/web/src/voice/voice.ts` (micrófono → AnalyserNode → `liveLevel`; MediaRecorder si STT=elevenlabs, si no `SpeechRecognition` es-MX; reproductor único conectado a analizador; `speechSynthesis` de respaldo) y `voice/ptt.ts` (mantener para hablar). Responde con voz solo si el canal fue voz. Silencio en localStorage `friday.voz`.
 - iPhone: el audio se "desbloquea" UNA vez con un WAV silencioso durante un toque (`unlockAudio`); repetirlo pausaba la voz de FRIDAY (bug corregido).
 - Diagnóstico solo en desarrollo: `window.__friday` (`presence`, `liveLevel`).
@@ -56,6 +58,7 @@ Plan acordado de llaves (2026-11-02): Claude primero (Diego agregará `ANTHROPIC
 - Desarrollo: copiar `.env.example` a `.env`, poner `FRIDAY_PASSWORD`; `npm run dev:server` y `npm run dev:web` → http://localhost:5173.
 
 ## Notas técnicas
+- Diseño: tokens y materiales HUD en `styles/base.css` (clases `.frosted/.blur/.clear` conservan nombre, nueva piel con esquinas cortadas). Tipografías: Barlow Condensed, IBM Plex Mono y Sans (OFL; ver `LICENSES.md`). El requisito original de "sin monoespaciadas" quedó reemplazado por la elección del estilo A.
 - El minificador de CSS de Vite fusiona `-webkit-backdrop-filter` y `backdrop-filter`: escribir solo `backdrop-filter`.
 - En JS `\b` no reconoce letras acentuadas: usar `(?=[^\p{L}]|$)` con bandera `u` (ver `AFFIRM` en `agent/run.ts`).
 - Vista previa privada: artefacto claude.ai (slug fb6c693a-1a3b-4874-895d-65ab208a7545), publicado desde `apps/web/dist` (modo demo).

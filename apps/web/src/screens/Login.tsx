@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MobiusView } from '../mobius/MobiusView';
+import { HudCoreView } from '../hud/HudCoreView';
 import { chat } from '../state/chat';
 import { ArrowUp } from '../components/icons';
 
@@ -12,7 +12,7 @@ export function Login() {
   };
   return (
     <main className="login">
-      <MobiusView className="login-mobius" distance={7.4} />
+      <HudCoreView className="login-core" />
       <h1 className="title login-title">FRIDAY</h1>
       <form className="field clear login-field" onSubmit={submit}>
         <input type="password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Contraseña" aria-label="Contraseña" autoFocus />

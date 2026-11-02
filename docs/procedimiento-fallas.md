@@ -20,7 +20,7 @@
 | No llegan los avisos | Avisos desactivados en ese dispositivo, o el permiso está bloqueado. | Ajustes → Avisos → Activar. Si dice «Bloqueadas»: ajustes del navegador (Mac) o Ajustes → Notificaciones → FRIDAY (iPhone). |
 | En iPhone no aparece «Activar» avisos | FRIDAY no está agregada a la pantalla de inicio. | Safari → Compartir → Agregar a pantalla de inicio; abre FRIDAY desde ese ícono. |
 | No llegó el resumen de las 7:30 | El servidor estaba apagado en la mañana. | Revisa el servidor; el resumen siempre está en la pantalla Resumen. |
-| La cinta de luz no se ve | El equipo no puede dibujar 3D; aparece un anillo quieto. | No afecta a FRIDAY. Reporta el equipo y navegador. |
+| El núcleo de luz no se ve | El equipo no pudo dibujarlo; aparece un anillo quieto. | No afecta a FRIDAY. Reporta el equipo y navegador. |
 
 | La página no abre (servidor publicado) | El servidor está apagado o el dominio no apunta bien. | `ssh root@IP` → `cd friday && docker compose -f docker-compose.prod.yml ps`. Si algo no dice «running»: `docker compose -f docker-compose.prod.yml up -d`. |
 | Se perdió información | — | Restaurar el respaldo del día anterior (`docs/despliegue.md` → Respaldos). |

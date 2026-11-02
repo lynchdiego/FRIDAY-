@@ -4,6 +4,7 @@ import { presence } from '../mobius/presence';
 import { mock } from '../data/mock';
 import { speak, voice } from '../voice/voice';
 import { setTz } from './tz';
+import { alertFlash } from '../mobius/presence';
 
 /**
  * Estado de la conversación y conexión con el servidor de FRIDAY.
@@ -71,6 +72,7 @@ export const chat = {
         : await demoReply(text);
       const action = r.cards.find((c): c is ActionCard => c.type === 'action');
       set({ conversationId: r.conversationId, messages: [...s.messages, { role: 'assistant', text: r.text, cards: r.cards }], action: action ?? s.action });
+      if (r.cards.some((c) => c.type === 'notice' && c.tone === 'error')) alertFlash.error();
       // Si le hablaste, FRIDAY responde con voz (a menos que esté en silencio).
       if (channel === 'voz' && voice.get().on) speak(r.text);
       else speakFor(r.text);
